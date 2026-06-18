@@ -1,0 +1,109 @@
+@use '@/styles/variables.scss' as *;
+
+.card {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  margin-bottom: $spacing-md;
+  box-shadow: $shadow-card;
+  transition: all $transition-base;
+
+  &:active {
+    transform: scale(0.99);
+    box-shadow: $shadow-card-hover;
+  }
+}
+
+.header {
+  display: flex;
+  gap: $spacing-lg;
+  margin-bottom: $spacing-md;
+}
+
+.image {
+  width: 140rpx;
+  height: 140rpx;
+  border-radius: $radius-md;
+  background: $color-bg-page;
+  flex-shrink: 0;
+}
+
+.info {
+  flex: 1;
+  min-width: 0;
+}
+
+.name {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-xs;
+  @include text-ellipsis;
+}
+
+.spec {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  margin-bottom: $spacing-xs;
+  @include text-ellipsis;
+}
+
+.category {
+  display: inline-block;
+  padding: 4rpx 12rpx;
+  background: rgba($color-primary, 0.1);
+  color: $color-primary;
+  font-size: $font-size-xs;
+  border-radius: $radius-xs;
+}
+
+.priceRow {
+  display: flex;
+  align-items: baseline;
+  gap: $spacing-md;
+  margin-bottom: $spacing-md;
+}
+
+.price {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  color: $color-primary;
+}
+
+.priceUnit {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+}
+
+.stockRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: $spacing-md;
+  border-top: 1rpx solid $color-divider;
+}
+
+.stockInfo {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.stockNum {
+  font-weight: $font-weight-semibold;
+  color: $color-success;
+
+  &.low {
+    color: $color-warning;
+  }
+
+  &.out {
+    color: $color-error;
+  }
+}
+
+.batches {
+  display: flex;
+  gap: $spacing-sm;
+  flex-wrap: wrap;
+  margin-top: $spacing-sm;
+}

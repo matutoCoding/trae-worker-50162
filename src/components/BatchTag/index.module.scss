@@ -1,0 +1,31 @@
+@use '@/styles/variables.scss' as *;
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 6rpx 16rpx;
+  border-radius: $radius-sm;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  white-space: nowrap;
+}
+
+.normal {
+  background: rgba($color-success, 0.1);
+  color: $color-success;
+}
+
+.nearExpiry {
+  background: rgba($color-warning, 0.1);
+  color: $color-warning;
+}
+
+.expired {
+  background: rgba($color-error, 0.1);
+  color: $color-error;
+}
+
+.locked {
+  background: rgba($color-locked, 0.1);
+  color: $color-locked;
+}

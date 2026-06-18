@@ -1,0 +1,61 @@
+@use '@/styles/compat.scss';
+@use '@/styles/variables.scss' as *;
+
+// 全局样式
+page {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Hiragino Sans GB',
+    sans-serif;
+  font-size: $font-size-md;
+  line-height: $line-height-normal;
+  color: $color-text-primary;
+  background: linear-gradient(180deg, #EEF2FF 0%, $color-bg-page 100%);
+  min-height: 100vh;
+}
+
+// 通用容器
+.pageContainer {
+  padding: $spacing-lg $page-padding;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+// 卡片通用样式
+.card {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-card;
+  padding: $spacing-lg;
+  margin-bottom: $spacing-md;
+}
+
+// 渐变按钮
+.primaryGradient {
+  background: linear-gradient(135deg, $color-primary-light 0%, $color-primary 100%);
+  color: $color-text-white;
+}
+
+// 状态标签颜色
+.tagSuccess {
+  background: rgba($color-success, 0.1);
+  color: $color-success;
+}
+
+.tagWarning {
+  background: rgba($color-warning, 0.1);
+  color: $color-warning;
+}
+
+.tagError {
+  background: rgba($color-error, 0.1);
+  color: $color-error;
+}
+
+.tagInfo {
+  background: rgba($color-info, 0.1);
+  color: $color-info;
+}
+
+.tagLocked {
+  background: rgba($color-locked, 0.1);
+  color: $color-locked;
+}

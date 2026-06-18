@@ -1,0 +1,120 @@
+@use '@/styles/variables.scss' as *;
+
+.container {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+}
+
+.title {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-md;
+}
+
+.segmentsList {
+  margin-bottom: $spacing-lg;
+}
+
+.segmentItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: $spacing-md 0;
+  border-bottom: 1rpx solid $color-divider;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.segmentInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.segmentName {
+  font-size: $font-size-md;
+  color: $color-text-primary;
+  font-weight: $font-weight-medium;
+  margin-bottom: $spacing-xs;
+}
+
+.segmentTime {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.segmentAmount {
+  text-align: right;
+}
+
+.segmentRate {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  margin-bottom: $spacing-xs;
+}
+
+.segmentDuration {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+}
+
+.segmentPrice {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-primary;
+}
+
+.summary {
+  padding-top: $spacing-md;
+  border-top: 2rpx solid $color-divider;
+}
+
+.summaryRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: $spacing-sm 0;
+}
+
+.summaryLabel {
+  font-size: $font-size-md;
+  color: $color-text-secondary;
+}
+
+.summaryValue {
+  font-size: $font-size-md;
+  color: $color-text-primary;
+}
+
+.penalty {
+  color: $color-error;
+}
+
+.total {
+  padding-top: $spacing-md;
+  margin-top: $spacing-sm;
+  border-top: 1rpx dashed $color-border;
+}
+
+.totalLabel {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.totalValue {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  color: $color-primary;
+}
+
+.hoursInfo {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+  margin-top: $spacing-xs;
+  text-align: right;
+}

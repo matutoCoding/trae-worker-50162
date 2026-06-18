@@ -1,0 +1,84 @@
+@use '@/styles/variables.scss' as *;
+
+.statCard {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+  display: flex;
+  align-items: center;
+  gap: $spacing-lg;
+  transition: all $transition-base;
+
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+.iconWrapper {
+  width: 96rpx;
+  height: 96rpx;
+  border-radius: $radius-xl;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48rpx;
+  font-weight: $font-weight-bold;
+  color: $color-text-white;
+  flex-shrink: 0;
+}
+
+.blue {
+  background: linear-gradient(135deg, $color-primary-light 0%, $color-primary 100%);
+}
+
+.green {
+  background: linear-gradient(135deg, #34D399 0%, $color-success 100%);
+}
+
+.orange {
+  background: linear-gradient(135deg, #FBBF24 0%, $color-warning 100%);
+}
+
+.red {
+  background: linear-gradient(135deg, #F87171 0%, $color-error 100%);
+}
+
+.content {
+  flex: 1;
+  min-width: 0;
+}
+
+.label {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  margin-bottom: $spacing-xs;
+  @include text-ellipsis;
+}
+
+.value {
+  font-size: $font-size-xxl;
+  font-weight: $font-weight-bold;
+  color: $color-text-primary;
+  @include text-ellipsis;
+}
+
+.unit {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-normal;
+  color: $color-text-tertiary;
+  margin-left: $spacing-xs;
+}
+
+.trend {
+  font-size: $font-size-xs;
+  margin-top: $spacing-xs;
+
+  &.up {
+    color: $color-success;
+  }
+
+  &.down {
+    color: $color-error;
+  }
+}

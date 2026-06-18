@@ -1,0 +1,260 @@
+@use '@/styles/variables.scss' as *;
+
+.pageContainer {
+  padding: $spacing-lg $page-padding $spacing-xl;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+.orderHeader {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  margin-bottom: $spacing-lg;
+  box-shadow: $shadow-card;
+}
+
+.orderNoRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-md;
+}
+
+.orderNo {
+  font-size: $font-size-md;
+  color: $color-text-secondary;
+}
+
+.statusTag {
+  padding: $spacing-xs $spacing-md;
+  border-radius: $radius-sm;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+
+  &.pending {
+    background: rgba($color-info, 0.1);
+    color: $color-info;
+  }
+
+  &.active {
+    background: rgba($color-success, 0.1);
+    color: $color-success;
+  }
+
+  &.completed {
+    background: rgba($color-text-tertiary, 0.1);
+    color: $color-text-tertiary;
+  }
+
+  &.overdue {
+    background: rgba($color-danger, 0.1);
+    color: $color-danger;
+  }
+
+  &.cancelled {
+    background: rgba($color-text-disabled, 0.1);
+    color: $color-text-disabled;
+  }
+}
+
+.customerInfo {
+  padding-top: $spacing-md;
+  border-top: 1rpx solid $color-divider;
+}
+
+.customerName {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-xs;
+}
+
+.customerPhone {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.section {
+  margin-bottom: $spacing-lg;
+}
+
+.sectionTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-md;
+}
+
+.infoCard {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+}
+
+.infoRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: $spacing-sm 0;
+
+  &:not(:last-child) {
+    border-bottom: 1rpx solid $color-divider;
+  }
+}
+
+.infoLabel {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  flex-shrink: 0;
+}
+
+.infoValue {
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  text-align: right;
+  flex: 1;
+  margin-left: $spacing-lg;
+}
+
+.equipmentList {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.equipmentItem {
+  background: $color-bg-card;
+  border-radius: $radius-md;
+  padding: $spacing-md $spacing-lg;
+  box-shadow: $shadow-card;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.equipmentInfo {
+  flex: 1;
+}
+
+.equipmentName {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-xs;
+}
+
+.equipmentSpec {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.equipmentQty {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+  margin-top: $spacing-xs;
+}
+
+.batchInfo {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  margin-top: $spacing-xs;
+}
+
+.equipmentAmount {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+  color: $color-primary;
+  text-align: right;
+}
+
+.amountSection {
+  background: linear-gradient(135deg, rgba($color-primary, 0.08) 0%, rgba($color-primary-light, 0.08) 100%);
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+}
+
+.amountRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: $spacing-sm 0;
+}
+
+.amountLabel {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.amountValue {
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+}
+
+.totalRow {
+  margin-top: $spacing-md;
+  padding-top: $spacing-md;
+  border-top: 1rpx solid rgba($color-border, 0.5);
+}
+
+.totalLabel {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.totalValue {
+  font-size: $font-size-xxl;
+  font-weight: $font-weight-bold;
+  color: $color-primary;
+}
+
+.actionBtns {
+  display: flex;
+  gap: $spacing-md;
+  margin-top: $spacing-xl;
+}
+
+.secondaryBtn {
+  @include button-reset;
+  flex: 1;
+  height: $button-height-lg;
+  border-radius: $radius-button;
+  background: $color-bg-card;
+  border: 1rpx solid $color-border;
+  color: $color-text-secondary;
+  font-size: $font-size-md;
+  transition: all $transition-base;
+
+  &:active {
+    opacity: 0.8;
+  }
+}
+
+.primaryBtn {
+  @include button-reset;
+  flex: 1;
+  height: $button-height-lg;
+  border-radius: $radius-button;
+  background: linear-gradient(135deg, $color-primary-light 0%, $color-primary 100%);
+  color: $color-text-white;
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  transition: all $transition-base;
+
+  &:active {
+    opacity: 0.8;
+    transform: scale(0.98);
+  }
+
+  &.danger {
+    background: linear-gradient(135deg, $color-danger-light 0%, $color-danger 100%);
+  }
+}
+
+.emptyState {
+  padding: $spacing-xxl $spacing-lg;
+  text-align: center;
+  color: $color-text-tertiary;
+}

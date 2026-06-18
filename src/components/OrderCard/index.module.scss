@@ -1,0 +1,149 @@
+@use '@/styles/variables.scss' as *;
+
+.card {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  margin-bottom: $spacing-md;
+  box-shadow: $shadow-card;
+  transition: all $transition-base;
+
+  &:active {
+    transform: scale(0.99);
+  }
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-md;
+}
+
+.orderNo {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.status {
+  padding: 6rpx 16rpx;
+  border-radius: $radius-sm;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+}
+
+.customerInfo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-md;
+  padding-bottom: $spacing-md;
+  border-bottom: 1rpx solid $color-divider;
+}
+
+.customerName {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.customerPhone {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.equipmentList {
+  margin-bottom: $spacing-md;
+}
+
+.equipmentItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: $spacing-sm 0;
+}
+
+.equipmentName {
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  @include text-ellipsis;
+  flex: 1;
+}
+
+.equipmentQty {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  margin-right: $spacing-md;
+}
+
+.timeInfo {
+  display: flex;
+  justify-content: space-between;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  margin-bottom: $spacing-sm;
+}
+
+.footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: $spacing-md;
+  border-top: 1rpx solid $color-divider;
+}
+
+.amount {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+  color: $color-primary;
+}
+
+.paymentStatus {
+  font-size: $font-size-sm;
+
+  &.paid {
+    color: $color-success;
+  }
+
+  &.partial {
+    color: $color-warning;
+  }
+
+  &.unpaid {
+    color: $color-error;
+  }
+}
+
+.actions {
+  display: flex;
+  gap: $spacing-sm;
+}
+
+.actionBtn {
+  @include button-reset;
+  height: $button-height-sm;
+  padding: 0 $spacing-lg;
+  border-radius: $radius-button;
+  font-size: $font-size-sm;
+  border: 1rpx solid $color-border;
+  background: $color-bg-card;
+  color: $color-text-secondary;
+  transition: all $transition-base;
+
+  &:active {
+    opacity: 0.8;
+    transform: scale(0.96);
+  }
+
+  &.primary {
+    background: linear-gradient(135deg, $color-primary-light 0%, $color-primary 100%);
+    color: $color-text-white;
+    border: none;
+  }
+
+  &.danger {
+    background: $color-error;
+    color: $color-text-white;
+    border: none;
+  }
+}

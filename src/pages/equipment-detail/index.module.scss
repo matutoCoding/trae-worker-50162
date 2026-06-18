@@ -1,0 +1,175 @@
+@use '@/styles/variables.scss' as *;
+
+.pageContainer {
+  padding: $spacing-lg $page-padding $spacing-xl;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+.header {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  margin-bottom: $spacing-lg;
+  box-shadow: $shadow-card;
+}
+
+.equipmentImage {
+  width: 100%;
+  height: 400rpx;
+  border-radius: $radius-md;
+  background: linear-gradient(135deg, $color-primary-light 0%, $color-primary 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 120rpx;
+  margin-bottom: $spacing-lg;
+}
+
+.equipmentInfo {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.equipmentName {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  color: $color-text-primary;
+}
+
+.equipmentSpec {
+  font-size: $font-size-md;
+  color: $color-text-secondary;
+}
+
+.equipmentPrice {
+  font-size: $font-size-xxl;
+  font-weight: $font-weight-bold;
+  color: $color-primary;
+}
+
+.equipmentMeta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: $spacing-md;
+  padding-top: $spacing-md;
+  border-top: 1rpx solid $color-divider;
+}
+
+.metaItem {
+  text-align: center;
+  flex: 1;
+}
+
+.metaValue {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-xs;
+}
+
+.metaLabel {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.section {
+  margin-bottom: $spacing-xl;
+}
+
+.sectionTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-md;
+}
+
+.batchesList {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.batchItem {
+  background: $color-bg-card;
+  border-radius: $radius-md;
+  padding: $spacing-md $spacing-lg;
+  box-shadow: $shadow-card;
+}
+
+.batchHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-sm;
+}
+
+.batchNo {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.batchDates {
+  display: flex;
+  gap: $spacing-lg;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.batchQty {
+  display: flex;
+  justify-content: space-between;
+  margin-top: $spacing-sm;
+  padding-top: $spacing-sm;
+  border-top: 1rpx solid $color-divider;
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+}
+
+.emptyState {
+  padding: $spacing-xxl $spacing-lg;
+  text-align: center;
+  color: $color-text-tertiary;
+}
+
+.actionBtns {
+  display: flex;
+  gap: $spacing-md;
+  margin-top: $spacing-lg;
+}
+
+.secondaryBtn {
+  @include button-reset;
+  flex: 1;
+  height: $button-height-lg;
+  border-radius: $radius-button;
+  background: $color-bg-card;
+  border: 1rpx solid $color-border;
+  color: $color-text-secondary;
+  font-size: $font-size-md;
+  transition: all $transition-base;
+
+  &:active {
+    opacity: 0.8;
+  }
+}
+
+.primaryBtn {
+  @include button-reset;
+  flex: 1;
+  height: $button-height-lg;
+  border-radius: $radius-button;
+  background: linear-gradient(135deg, $color-primary-light 0%, $color-primary 100%);
+  color: $color-text-white;
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  transition: all $transition-base;
+
+  &:active {
+    opacity: 0.8;
+    transform: scale(0.98);
+  }
+}
