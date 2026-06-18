@@ -126,17 +126,47 @@ const OrderPage: React.FC = () => {
   };
 
   const updateQuantity = (equipmentId: string, delta: number) => {
-    const equipment = equipments.find(e => e.id === equipmentId);
-    if (!equipment) return;
-
     setFormData(prev => ({
       ...prev,
       items: prev.items.map(item => {
         if (item.equipmentId !== equipmentId) return item;
-        const newQty = Math.max(1, Math.min(equipment.availableQuantity, item.quantity + delta));
+        const newQty = Math.max(1, item.quantity + delta);
         return { ...item, quantity: newQty };
       })
     }));
+  };
+
+  const getBatchAllocationPreview = (equipmentId: string, quantity: number) => {
+    const equipment = equipments.find(e => e.id === equipmentId);
+    if (!equipment) return { batches: [], isSufficient: false, shortage: quantity, availableQty: 0 };
+
+    const availableBatches = equipment.batches
+      .filter(b => (b.status === 'normal' || b.status === 'near_expiry') && b.availableQuantity > 0)
+      .sort((a, b) => new Date(a.expiryDate).getTime() - new Date(b.expiryDate).getTime());
+
+    const result: { batchId: string; batchNo: string; quantity: number; expiryDate: string; status: string }[] = [];
+    let remaining = quantity;
+
+    for (const batch of availableBatches) {
+      if (remaining <= 0) break;
+      const takeQty = Math.min(batch.availableQuantity, remaining);
+      result.push({
+        batchId: batch.id,
+        batchNo: batch.batchNo,
+        quantity: takeQty,
+        expiryDate: batch.expiryDate,
+        status: batch.status
+      });
+      remaining -= takeQty;
+    }
+
+    const availableQty = availableBatches.reduce((sum, b) => sum + b.availableQuantity, 0);
+    return {
+      batches: result,
+      isSufficient: remaining <= 0,
+      shortage: Math.max(0, remaining),
+      availableQty
+    };
   };
 
   const handleSubmit = () => {
@@ -150,6 +180,25 @@ const OrderPage: React.FC = () => {
     }
     if (formData.items.length === 0) {
       Taro.showToast({ title: '请选择租赁设备', icon: 'none' });
+      return;
+    }
+
+    const insufficientItems: string[] = [];
+    for (const item of formData.items) {
+      const preview = getBatchAllocationPreview(item.equipmentId, item.quantity);
+      if (!preview.isSufficient) {
+        const eq = equipments.find(e => e.id === item.equipmentId);
+        insufficientItems.push(`${eq?.name || '设备'}还差 ${preview.shortage} 台`);
+      }
+    }
+
+    if (insufficientItems.length > 0) {
+      Taro.showModal({
+        title: '库存不足',
+        content: insufficientItems.join('；\n'),
+        showCancel: false,
+        confirmText: '我知道了'
+      });
       return;
     }
 
@@ -336,24 +385,55 @@ const OrderPage: React.FC = () => {
                 <View>
                   {formData.items.map(item => {
                     const eq = equipments.find(e => e.id === item.equipmentId);
+                    const preview = getBatchAllocationPreview(item.equipmentId, item.quantity);
                     return (
                       <View key={item.equipmentId} className={styles.selectedEquipment}>
-                        <Text className={styles.selectedEquipName}>{eq?.name}</Text>
-                        <View className={styles.qtyControl}>
-                          <Button
-                            className={styles.qtyBtn}
-                            onClick={() => updateQuantity(item.equipmentId, -1)}
-                          >
-                            -
-                          </Button>
-                          <Text className={styles.qtyValue}>{item.quantity}</Text>
-                          <Button
-                            className={styles.qtyBtn}
-                            onClick={() => updateQuantity(item.equipmentId, 1)}
-                          >
-                            +
-                          </Button>
+                        <View className={styles.selectedEquipHeader}>
+                          <Text className={styles.selectedEquipName}>{eq?.name}</Text>
+                          <View className={styles.qtyControl}>
+                            <Button
+                              className={styles.qtyBtn}
+                              onClick={() => updateQuantity(item.equipmentId, -1)}
+                            >
+                              -
+                            </Button>
+                            <Text className={classnames(
+                              styles.qtyValue,
+                              !preview.isSufficient && styles.qtyInsufficient
+                            )}>{item.quantity}</Text>
+                            <Button
+                              className={styles.qtyBtn}
+                              onClick={() => updateQuantity(item.equipmentId, 1)}
+                            >
+                              +
+                            </Button>
+                          </View>
                         </View>
+
+                        {!preview.isSufficient && (
+                          <View className={styles.insufficientHint}>
+                            <Text>⚠️ 库存不足，还差 {preview.shortage} 台（可用 {preview.availableQty} 台）</Text>
+                          </View>
+                        )}
+
+                        {preview.batches.length > 0 && (
+                          <View className={styles.batchAllocation}>
+                            <Text className={styles.batchAllocationTitle}>分配批次（先进先出）：</Text>
+                            {preview.batches.map(batch => (
+                              <View key={batch.batchId} className={styles.batchAllocItem}>
+                                <Text className={styles.batchAllocNo}>{batch.batchNo}</Text>
+                                <Text className={styles.batchAllocQty}>{batch.quantity} 台</Text>
+                                <Text className={classnames(
+                                  styles.batchAllocExpiry,
+                                  batch.status === 'near_expiry' && styles.statusNearExpiry
+                                )}>
+                                  {batch.status === 'near_expiry' ? '临期 ' : ''}
+                                  {new Date(batch.expiryDate).toLocaleDateString('zh-CN')} 到期
+                                </Text>
+                              </View>
+                            ))}
+                          </View>
+                        )}
                       </View>
                     );
                   })}

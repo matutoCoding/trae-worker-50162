@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { View, Text, ScrollView, PullDownRefresh } from '@tarojs/components';
 import Taro from '@tarojs/taro';
 import classnames from 'classnames';
@@ -19,6 +19,7 @@ const HomePage: React.FC = () => {
   const { fetchRateRules, fetchPenaltyRules } = useRateStore();
 
   const [activeTab, setActiveTab] = useState<'equipment' | 'order'>('equipment');
+  const [orderFilter, setOrderFilter] = useState<'all' | 'active' | 'completed' | 'unsettled'>('active');
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
@@ -43,6 +44,26 @@ const HomePage: React.FC = () => {
   const stats = getStatistics();
   const nearExpiryList = getNearExpiryEquipment(equipments);
   const activeOrders = getActiveOrders();
+
+  const filteredOrders = useMemo(() => {
+    switch (orderFilter) {
+      case 'active':
+        return orders.filter(o => o.status === 'active' || o.status === 'overdue');
+      case 'completed':
+        return orders.filter(o => o.status === 'completed');
+      case 'unsettled':
+        return orders.filter(o => o.paymentStatus !== 'paid' || (o.deposit > 0 && !o.depositRefunded));
+      default:
+        return orders;
+    }
+  }, [orders, orderFilter]);
+
+  const orderFilterTabs = [
+    { key: 'active', label: '进行中' },
+    { key: 'all', label: '全部' },
+    { key: 'completed', label: '已完成' },
+    { key: 'unsettled', label: '未结清' }
+  ];
 
   const handleEquipmentClick = (id: string) => {
     Taro.navigateTo({
@@ -217,7 +238,7 @@ const HomePage: React.FC = () => {
               className={classnames(styles.tabItem, activeTab === 'order' && styles.active)}
               onClick={() => setActiveTab('order')}
             >
-              进行中订单
+              订单
             </Text>
           </View>
 
@@ -244,24 +265,39 @@ const HomePage: React.FC = () => {
                 onAction={() => handleQuickAction('addEquipment')}
               />
             )
-          ) : activeOrders.length > 0 ? (
-            activeOrders.slice(0, 5).map(order => (
-              <OrderCard
-                key={order.id}
-                order={order}
-                onClick={() => handleOrderClick(order.id)}
-                onComplete={() => handleCompleteOrder(order.id)}
-                onCancel={() => handleCancelOrder(order.id)}
-              />
-            ))
           ) : (
-            <EmptyState
-              icon="📋"
-              text="暂无进行中订单"
-              subText="点击创建新订单"
-              actionText="创建订单"
-              onAction={() => handleQuickAction('createOrder')}
-            />
+            <>
+              <View className={styles.subTabs}>
+                {orderFilterTabs.map(tab => (
+                  <Text
+                    key={tab.key}
+                    className={classnames(styles.subTabItem, orderFilter === tab.key && styles.active)}
+                    onClick={() => setOrderFilter(tab.key as any)}
+                  >
+                    {tab.label}
+                  </Text>
+                ))}
+              </View>
+              {filteredOrders.length > 0 ? (
+                filteredOrders.slice(0, 10).map(order => (
+                  <OrderCard
+                    key={order.id}
+                    order={order}
+                    onClick={() => handleOrderClick(order.id)}
+                    onComplete={() => handleCompleteOrder(order.id)}
+                    onCancel={() => handleCancelOrder(order.id)}
+                  />
+                ))
+              ) : (
+                <EmptyState
+                  icon="📋"
+                  text="暂无订单"
+                  subText="点击创建新订单"
+                  actionText="创建订单"
+                  onAction={() => handleQuickAction('createOrder')}
+                />
+              )}
+            </>
           )}
         </View>
       </ScrollView>

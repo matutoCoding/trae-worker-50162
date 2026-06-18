@@ -38,7 +38,10 @@ const generateOrder = (
     endTime,
     rateRule,
     penaltyRule: mockBillingConfig.defaultPenaltyRule,
-    quantity
+    quantity,
+    scheduledEndTime: endTime,
+    enableOverduePenalty: mockBillingConfig.enableOverduePenalty,
+    defaultGracePeriodHours: mockBillingConfig.defaultGracePeriodHours
   });
 
   const batch = equipment.batches.find(b => b.status === 'normal' || b.status === 'near_expiry')!;
@@ -55,6 +58,51 @@ const generateOrder = (
   const penaltyAmount = status === 'overdue' ? 50 : Math.round(billingDetail.penaltyAmount * 100) / 100;
   const deposit = Math.round(billingDetail.totalAmount * 0.3);
   const totalAmount = Math.round((rentalAmount + penaltyAmount + deposit) * 100) / 100;
+
+  let paymentStatus: 'unpaid' | 'partial' | 'paid' = 'unpaid';
+  let paidAmount = 0;
+  const paymentRecords: any[] = [];
+  let depositRefunded = false;
+  let depositRefundAmount: number | undefined = undefined;
+  let depositRefundTime: string | undefined = undefined;
+
+  if (status === 'completed') {
+    paymentStatus = 'paid';
+    paidAmount = totalAmount;
+    depositRefunded = true;
+    depositRefundAmount = deposit;
+    depositRefundTime = addDays(endOffset);
+    paymentRecords.push({
+      id: `PAY${index}001`,
+      orderId: `ORD${String(index + 1).padStart(4, '0')}`,
+      amount: totalAmount,
+      paymentMethod: 'wechat',
+      remark: '全款支付',
+      createdAt: addDays(startOffset)
+    });
+  } else if (status === 'active') {
+    paymentStatus = 'partial';
+    paidAmount = deposit;
+    paymentRecords.push({
+      id: `PAY${index}001`,
+      orderId: `ORD${String(index + 1).padStart(4, '0')}`,
+      amount: deposit,
+      paymentMethod: 'cash',
+      remark: '押金',
+      createdAt: addDays(startOffset)
+    });
+  } else if (status === 'overdue') {
+    paymentStatus = 'partial';
+    paidAmount = Math.round(totalAmount * 0.5);
+    paymentRecords.push({
+      id: `PAY${index}001`,
+      orderId: `ORD${String(index + 1).padStart(4, '0')}`,
+      amount: Math.round(totalAmount * 0.5),
+      paymentMethod: 'alipay',
+      remark: '首付款',
+      createdAt: addDays(startOffset)
+    });
+  }
 
   return {
     id: `ORD${String(index + 1).padStart(4, '0')}`,
@@ -92,8 +140,13 @@ const generateOrder = (
     penaltyAmount,
     totalAmount,
     deposit,
+    depositRefunded,
+    depositRefundAmount,
+    depositRefundTime,
     billingDetail,
-    paymentStatus: status === 'completed' ? 'paid' : status === 'active' ? 'partial' : 'unpaid',
+    paymentStatus,
+    paidAmount,
+    paymentRecords,
     remark: index % 3 === 0 ? '客户要求送上门' : undefined,
     createdAt: startTime,
     updatedAt: addDays(-1)

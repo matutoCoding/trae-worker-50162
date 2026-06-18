@@ -258,3 +258,394 @@
   text-align: center;
   color: $color-text-tertiary;
 }
+
+.equipmentItem {
+  display: block;
+  padding: $spacing-md $spacing-lg;
+}
+
+.equipmentHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+}
+
+.equipmentRight {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: $spacing-xs;
+}
+
+.expandIcon {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.itemDetail {
+  margin-top: $spacing-md;
+  padding-top: $spacing-md;
+  border-top: 1rpx dashed $color-divider;
+}
+
+.detailSection {
+  margin-bottom: $spacing-md;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.detailSubtitle {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-sm;
+}
+
+.detailEmpty {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  padding: $spacing-sm 0;
+}
+
+.batchRow {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: $spacing-xs 0;
+  font-size: $font-size-xs;
+}
+
+.batchNoText {
+  flex: 1;
+  color: $color-text-secondary;
+  font-weight: $font-weight-medium;
+}
+
+.batchQtyText {
+  color: $color-text-primary;
+  font-weight: $font-weight-semibold;
+}
+
+.batchExpiryText {
+  color: $color-text-tertiary;
+}
+
+.segmentRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: $spacing-sm 0;
+  border-bottom: 1rpx solid $color-divider;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.segmentInfo {
+  flex: 1;
+}
+
+.segmentName {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-primary;
+  margin-bottom: $spacing-xs;
+}
+
+.segmentTime {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.segmentAmount {
+  text-align: right;
+}
+
+.segmentRate {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.segmentDuration {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  margin-top: $spacing-xs;
+}
+
+.segmentPrice {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-primary;
+  margin-top: $spacing-xs;
+}
+
+.itemSummary {
+  margin-top: $spacing-sm;
+  padding-top: $spacing-sm;
+  border-top: 1rpx dashed $color-divider;
+}
+
+.summaryRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: $spacing-xs 0;
+}
+
+.summaryLabel {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.summaryValue {
+  font-size: $font-size-xs;
+  color: $color-text-primary;
+}
+
+.penaltyValue {
+  color: $color-error !important;
+}
+
+.totalRow {
+  margin-top: $spacing-xs;
+  padding-top: $spacing-xs;
+  border-top: 1rpx solid $color-divider;
+}
+
+.totalLabel {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.totalValue {
+  font-size: $font-size-md;
+  font-weight: $font-weight-bold;
+  color: $color-primary;
+}
+
+.diffRow {
+  padding-top: $spacing-sm;
+  margin-top: $spacing-sm;
+  border-top: 1rpx dashed $color-divider;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.diffLabel {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.diffValue {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+}
+
+.diffPositive {
+  color: $color-error;
+}
+
+.diffNegative {
+  color: $color-success;
+}
+
+.sectionSubtitle {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  font-weight: $font-weight-normal;
+  margin-left: $spacing-xs;
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-md;
+}
+
+.addPaymentBtn {
+  font-size: $font-size-sm;
+  color: $color-primary;
+  font-weight: $font-weight-medium;
+}
+
+.paymentStatus {
+  padding: $spacing-xs $spacing-sm;
+  border-radius: $radius-sm;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+
+  &.paid {
+    background: rgba($color-success, 0.1);
+    color: $color-success;
+  }
+
+  &.partial {
+    background: rgba($color-warning, 0.1);
+    color: $color-warning;
+  }
+
+  &.unpaid {
+    background: rgba($color-error, 0.1);
+    color: $color-error;
+  }
+}
+
+.depositStatus {
+  padding: $spacing-xs $spacing-sm;
+  border-radius: $radius-sm;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+
+  &.refunded {
+    background: rgba($color-success, 0.1);
+    color: $color-success;
+  }
+
+  &.unrefunded {
+    background: rgba($color-warning, 0.1);
+    color: $color-warning;
+  }
+}
+
+.paymentList {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  overflow: hidden;
+}
+
+.paymentItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: $spacing-md $spacing-lg;
+  border-bottom: 1rpx solid $color-divider;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.paymentInfo {
+  flex: 1;
+}
+
+.paymentMethod {
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  font-weight: $font-weight-medium;
+  margin-bottom: $spacing-xs;
+}
+
+.paymentTime {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  margin-bottom: $spacing-xs;
+}
+
+.paymentRemark {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.paymentAmount {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-success;
+}
+
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modalContent {
+  width: 600rpx;
+  background: $color-bg-card;
+  border-radius: $radius-xl;
+  padding: $spacing-xl;
+}
+
+.modalTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  text-align: center;
+  margin-bottom: $spacing-lg;
+}
+
+.formItem {
+  margin-bottom: $spacing-lg;
+}
+
+.formLabel {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  margin-bottom: $spacing-sm;
+  display: block;
+}
+
+.formInput {
+  width: 100%;
+  height: 80rpx;
+  background: $color-bg-page;
+  border-radius: $radius-md;
+  padding: 0 $spacing-md;
+  font-size: $font-size-md;
+  color: $color-text-primary;
+  box-sizing: border-box;
+}
+
+.formHint {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  margin-top: $spacing-xs;
+}
+
+.methodList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-sm;
+}
+
+.methodItem {
+  flex: 1;
+  min-width: 100rpx;
+  height: 72rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: $color-bg-page;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  border: 2rpx solid transparent;
+  box-sizing: border-box;
+
+  &.methodActive {
+    background: rgba($color-primary, 0.1);
+    color: $color-primary;
+    border-color: $color-primary;
+  }
+}
+
+.modalActions {
+  display: flex;
+  gap: $spacing-md;
+  margin-top: $spacing-xl;
+}
+

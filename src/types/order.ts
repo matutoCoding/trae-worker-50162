@@ -9,6 +9,15 @@ export interface BatchAllocation {
   quantity: number;
 }
 
+export interface PaymentRecord {
+  id: string;
+  orderId: string;
+  amount: number;
+  paymentMethod: 'cash' | 'wechat' | 'alipay' | 'card' | 'other';
+  remark?: string;
+  createdAt: string;
+}
+
 export interface OrderItem {
   id: string;
   orderId: string;
@@ -45,8 +54,13 @@ export interface Order {
   penaltyAmount: number;
   totalAmount: number;
   deposit: number;
+  depositRefunded: boolean;
+  depositRefundAmount?: number;
+  depositRefundTime?: string;
   billingDetail?: BillingDetail;
   paymentStatus: 'unpaid' | 'partial' | 'paid';
+  paidAmount: number;
+  paymentRecords: PaymentRecord[];
   remark?: string;
   createdAt: string;
   updatedAt: string;

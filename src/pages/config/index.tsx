@@ -40,6 +40,8 @@ const ConfigPage: React.FC = () => {
   const [trialEndTime, setTrialEndTime] = useState<string>(
     new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString().slice(0, 16).replace('T', ' ')
   );
+  const [trialOverdue, setTrialOverdue] = useState<boolean>(false);
+  const [trialOverdueHours, setTrialOverdueHours] = useState<string>('2');
   const [trialResult, setTrialResult] = useState<BillingDetail | null>(null);
 
   const tabs = [
@@ -95,12 +97,24 @@ const ConfigPage: React.FC = () => {
       return;
     }
 
+    let actualEndTime = end;
+    let scheduledEndTime = end;
+    if (trialOverdue) {
+      const overdueHours = Number(trialOverdueHours);
+      if (overdueHours > 0) {
+        actualEndTime = new Date(end.getTime() + overdueHours * 60 * 60 * 1000);
+      }
+    }
+
     const result = calculateBilling({
       startTime: start.toISOString(),
-      endTime: end.toISOString(),
+      endTime: actualEndTime.toISOString(),
       rateRule,
       penaltyRule: billingConfig.defaultPenaltyRule,
-      quantity: qty
+      quantity: qty,
+      scheduledEndTime: scheduledEndTime.toISOString(),
+      enableOverduePenalty: billingConfig.enableOverduePenalty,
+      defaultGracePeriodHours: billingConfig.defaultGracePeriodHours
     });
     setTrialResult(result);
   };
@@ -497,6 +511,33 @@ const ConfigPage: React.FC = () => {
                   </View>
                 </Picker>
               </View>
+
+              <View className={styles.configRow}>
+                <View>
+                  <Text className={styles.configLabel}>模拟超期</Text>
+                  <Text className={styles.configDesc}>开启后可模拟超期场景</Text>
+                </View>
+                <View
+                  className={classnames(styles.switch, trialOverdue && styles.active)}
+                  onClick={() => setTrialOverdue(!trialOverdue)}
+                />
+              </View>
+
+              {trialOverdue && (
+                <View className={styles.configRow}>
+                  <View>
+                    <Text className={styles.configLabel}>超期时长</Text>
+                    <Text className={styles.configDesc}>模拟超期多少小时</Text>
+                  </View>
+                  <Input
+                    className={styles.configInput}
+                    type="digit"
+                    value={trialOverdueHours}
+                    onInput={(e) => setTrialOverdueHours(e.detail.value)}
+                  />
+                  <Text className={styles.configValue}>小时</Text>
+                </View>
+              )}
 
               <Button className={styles.trialBtn} onClick={handleTrial}>
                 开始试算

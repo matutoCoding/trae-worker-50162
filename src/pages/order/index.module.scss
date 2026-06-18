@@ -248,12 +248,16 @@
 }
 
 .selectedEquipment {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   padding: $spacing-md;
   background: $color-bg-page;
   border-radius: $radius-md;
+  margin-bottom: $spacing-sm;
+}
+
+.selectedEquipHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: $spacing-sm;
 }
 
@@ -262,4 +266,55 @@
   font-size: $font-size-sm;
   color: $color-text-primary;
   @include text-ellipsis;
+}
+
+.qtyInsufficient {
+  color: $color-error !important;
+}
+
+.insufficientHint {
+  padding: $spacing-sm $spacing-md;
+  background: rgba($color-error, 0.08);
+  border-radius: $radius-sm;
+  font-size: $font-size-xs;
+  color: $color-error;
+  margin-bottom: $spacing-sm;
+}
+
+.batchAllocation {
+  padding-top: $spacing-sm;
+  border-top: 1rpx dashed $color-divider;
+}
+
+.batchAllocationTitle {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  margin-bottom: $spacing-xs;
+}
+
+.batchAllocItem {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: $spacing-xs 0;
+  font-size: $font-size-xs;
+}
+
+.batchAllocNo {
+  flex: 1;
+  color: $color-text-secondary;
+  font-weight: $font-weight-medium;
+}
+
+.batchAllocQty {
+  color: $color-text-primary;
+  font-weight: $font-weight-semibold;
+}
+
+.batchAllocExpiry {
+  color: $color-text-tertiary;
+}
+
+.statusNearExpiry {
+  color: $color-warning;
 }

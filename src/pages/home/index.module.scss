@@ -191,6 +191,29 @@
   }
 }
 
+.subTabs {
+  display: flex;
+  gap: $spacing-md;
+  margin-bottom: $spacing-md;
+  padding: $spacing-xs 0;
+  overflow-x: auto;
+}
+
+.subTabItem {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  padding: $spacing-xs $spacing-md;
+  background: $color-bg-card;
+  border-radius: $radius-button;
+  white-space: nowrap;
+  font-weight: $font-weight-medium;
+
+  &.active {
+    color: $color-text-white;
+    background: $color-primary;
+  }
+}
+
 .loading {
   display: flex;
   justify-content: center;

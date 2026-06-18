@@ -133,7 +133,9 @@ export const useOrderStore = create<OrderState>((set, get) => ({
           endTime: data.endTime,
           rateRule,
           penaltyRule: rateStore.billingConfig.defaultPenaltyRule,
-          quantity: totalQuantity
+          quantity: totalQuantity,
+          enableOverduePenalty: rateStore.billingConfig.enableOverduePenalty,
+          defaultGracePeriodHours: rateStore.billingConfig.defaultGracePeriodHours
         });
 
         const subtotal = Math.round(billingDetail.totalAmount * 100) / 100;
@@ -192,8 +194,11 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         penaltyAmount,
         totalAmount,
         deposit: data.deposit,
+        depositRefunded: false,
         billingDetail: totalBillingDetail,
         paymentStatus: 'unpaid',
+        paidAmount: 0,
+        paymentRecords: [],
         remark: data.remark,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
@@ -249,7 +254,10 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         endTime,
         rateRule,
         penaltyRule: rateStore.billingConfig.defaultPenaltyRule,
-        quantity: item.quantity
+        quantity: item.quantity,
+        scheduledEndTime: order.endTime,
+        enableOverduePenalty: rateStore.billingConfig.enableOverduePenalty,
+        defaultGracePeriodHours: rateStore.billingConfig.defaultGracePeriodHours
       });
 
       const subtotal = Math.round(billingDetail.totalAmount * 100) / 100;
@@ -377,7 +385,10 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         endTime,
         rateRule,
         penaltyRule: rateStore.billingConfig.defaultPenaltyRule,
-        quantity: item.quantity
+        quantity: item.quantity,
+        scheduledEndTime: order.endTime,
+        enableOverduePenalty: rateStore.billingConfig.enableOverduePenalty,
+        defaultGracePeriodHours: rateStore.billingConfig.defaultGracePeriodHours
       });
 
       totalBilling = {
@@ -433,6 +444,77 @@ export const useOrderStore = create<OrderState>((set, get) => ({
 
     console.log('[OrderStore] getStatistics:', stats);
     return stats;
+  },
+
+  addPaymentRecord: (orderId: string, amount: number, paymentMethod: string, remark?: string) => {
+    if (!amount || amount <= 0) return false;
+
+    set(state => {
+      const order = state.orders.find(o => o.id === orderId);
+      if (!order) return state;
+
+      const newRecord = {
+        id: `PAY${Date.now()}`,
+        orderId,
+        amount,
+        paymentMethod: paymentMethod as any,
+        remark,
+        createdAt: new Date().toISOString()
+      };
+
+      const newPaidAmount = Math.round((order.paidAmount + amount) * 100) / 100;
+      let paymentStatus: 'unpaid' | 'partial' | 'paid' = 'unpaid';
+      if (newPaidAmount >= order.totalAmount) {
+        paymentStatus = 'paid';
+      } else if (newPaidAmount > 0) {
+        paymentStatus = 'partial';
+      }
+
+      const orders = state.orders.map(o =>
+        o.id === orderId
+          ? {
+              ...o,
+              paidAmount: newPaidAmount,
+              paymentStatus,
+              paymentRecords: [...o.paymentRecords, newRecord],
+              updatedAt: new Date().toISOString()
+            }
+          : o
+      );
+
+      saveToStorage(STORAGE_KEYS.ORDERS, orders);
+      return { orders };
+    });
+
+    console.log('[OrderStore] addPaymentRecord:', { orderId, amount, paymentMethod });
+    return true;
+  },
+
+  refundDeposit: (orderId: string, amount?: number) => {
+    set(state => {
+      const order = state.orders.find(o => o.id === orderId);
+      if (!order) return state;
+
+      const refundAmount = amount !== undefined ? amount : order.deposit;
+
+      const orders = state.orders.map(o =>
+        o.id === orderId
+          ? {
+              ...o,
+              depositRefunded: true,
+              depositRefundAmount: refundAmount,
+              depositRefundTime: new Date().toISOString(),
+              updatedAt: new Date().toISOString()
+            }
+          : o
+      );
+
+      saveToStorage(STORAGE_KEYS.ORDERS, orders);
+      return { orders };
+    });
+
+    console.log('[OrderStore] refundDeposit:', { orderId, amount });
+    return true;
   },
 
   setSelectedOrder: (order: Order | null) => {
