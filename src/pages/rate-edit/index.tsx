@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, ScrollView, Button, Input } from '@tarojs/components';
 import Taro, { useRouter } from '@tarojs/taro';
 import { useRateStore } from '@/store/useRateStore';
@@ -9,6 +9,14 @@ import styles from './index.module.scss';
 
 const DEFAULT_SLOT_NAMES = ['早高峰', '日间', '晚高峰', '夜间', '周末', '节假日'];
 
+interface EditableSlot {
+  id?: string;
+  name: string;
+  startTime: string;
+  endTime: string;
+  rate: string;
+}
+
 const RateEditPage: React.FC = () => {
   const router = useRouter();
   const rateId = router.params.id as string;
@@ -17,25 +25,30 @@ const RateEditPage: React.FC = () => {
 
   const [rateRule, setRateRule] = useState<any>(null);
   const [baseRate, setBaseRate] = useState('');
-  const [timeSlots, setTimeSlots] = useState<Array<{
-    id?: string;
-    name: string;
-    startTime: string;
-    endTime: string;
-    rate: string;
-  }>>([]);
+  const [timeSlots, setTimeSlots] = useState<EditableSlot[]>([]);
   const [hasOverlap, setHasOverlap] = useState(false);
+
+  const originalSnapshotRef = useRef<{
+    baseRate: string;
+    timeSlots: EditableSlot[];
+  } | null>(null);
 
   useEffect(() => {
     if (rateId) {
       const rule = getRateRuleById(rateId);
       if (rule) {
-        setRateRule(rule);
-        setBaseRate(rule.baseRate.toString());
-        setTimeSlots(rule.timeSlots.map(slot => ({
+        const initialBaseRate = rule.baseRate.toString();
+        const initialSlots = rule.timeSlots.map(slot => ({
           ...slot,
           rate: slot.rate.toString(),
-        })));
+        }));
+        setRateRule(rule);
+        setBaseRate(initialBaseRate);
+        setTimeSlots(initialSlots);
+        originalSnapshotRef.current = {
+          baseRate: initialBaseRate,
+          timeSlots: JSON.parse(JSON.stringify(initialSlots))
+        };
       }
     }
   }, [rateId]);
@@ -82,14 +95,35 @@ const RateEditPage: React.FC = () => {
     }
     Taro.showModal({
       title: '删除时段',
-      content: '确定要删除该时段吗？',
+      content: '确定要删除该时段吗？点击保存后才会真正删除',
       success: (res) => {
         if (res.confirm) {
-          const slot = timeSlots[index];
-          if (slot.id) {
-            removeTimeSlot(rateId, slot.id);
-          }
           setTimeSlots(prev => prev.filter((_, i) => i !== index));
+        }
+      }
+    });
+  };
+
+  const handleCancel = () => {
+    if (!originalSnapshotRef.current) {
+      Taro.navigateBack();
+      return;
+    }
+    const snap = originalSnapshotRef.current;
+    const baseRateChanged = baseRate !== snap.baseRate;
+    const slotsChanged = JSON.stringify(timeSlots) !== JSON.stringify(snap.timeSlots);
+
+    if (!baseRateChanged && !slotsChanged) {
+      Taro.navigateBack();
+      return;
+    }
+
+    Taro.showModal({
+      title: '确认取消',
+      content: '您有未保存的修改，取消后将丢失这些改动，是否继续？',
+      success: (res) => {
+        if (res.confirm) {
+          Taro.navigateBack();
         }
       }
     });
@@ -124,6 +158,16 @@ const RateEditPage: React.FC = () => {
 
     try {
       updateRateRule(rateId, { baseRate: Number(baseRate) });
+
+      const originalSlots = originalSnapshotRef.current?.timeSlots || [];
+      const originalSlotIds = new Set(originalSlots.filter(s => s.id).map(s => s.id));
+      const currentSlotIds = new Set(timeSlots.filter(s => s.id).map(s => s.id));
+
+      for (const origId of originalSlotIds) {
+        if (!currentSlotIds.has(origId)) {
+          await removeTimeSlot(rateId, origId as string);
+        }
+      }
 
       for (const slot of timeSlots) {
         const slotData = {
@@ -252,7 +296,7 @@ const RateEditPage: React.FC = () => {
       </View>
 
       <View className={styles.actionBtns}>
-        <Button className={styles.cancelBtn} onClick={() => Taro.navigateBack()}>
+        <Button className={styles.cancelBtn} onClick={handleCancel}>
           取消
         </Button>
         <Button className={styles.submitBtn} onClick={handleSubmit} loading={loading}>

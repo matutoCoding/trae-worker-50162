@@ -3,6 +3,7 @@ import type { RateRule, TimeSlot, PenaltyRule, BillingConfig } from '@/types/rat
 import { DEFAULT_BILLING_CONFIG } from '@/types/rate';
 import { mockRateRules, mockPenaltyRules, mockBillingConfig } from '@/data/mockRate';
 import { validateTimeSlotOverlap } from '@/utils/billing';
+import { saveToStorage, loadFromStorage, STORAGE_KEYS } from '@/utils/storage';
 import { useEquipmentStore } from './useEquipmentStore';
 
 interface RateState {
@@ -85,8 +86,13 @@ export const useRateStore = create<RateState>((set, get) => ({
     }
     set({ loading: true });
     try {
-      const normalized = mockRateRules.map(normalizeRateRule);
+      const saved = loadFromStorage<RateRule[]>(STORAGE_KEYS.RATE_RULES);
+      const source = saved && saved.length > 0 ? saved : mockRateRules;
+      const normalized = source.map(normalizeRateRule);
       set({ rateRules: normalized, loading: false, _initialized: true });
+      if (!saved || saved.length === 0) {
+        saveToStorage(STORAGE_KEYS.RATE_RULES, normalized);
+      }
     } catch (err) {
       set({ error: '获取费率规则失败', loading: false });
       console.error('[RateStore] fetchRateRules error:', err);
@@ -101,8 +107,13 @@ export const useRateStore = create<RateState>((set, get) => ({
     }
     set({ loading: true });
     try {
-      const normalized = mockPenaltyRules.map(normalizePenaltyRule);
+      const saved = loadFromStorage<PenaltyRule[]>(STORAGE_KEYS.PENALTY_RULES);
+      const source = saved && saved.length > 0 ? saved : mockPenaltyRules;
+      const normalized = source.map(normalizePenaltyRule);
       set({ penaltyRules: normalized, loading: false });
+      if (!saved || saved.length === 0) {
+        saveToStorage(STORAGE_KEYS.PENALTY_RULES, normalized);
+      }
     } catch (err) {
       set({ error: '获取罚金规则失败', loading: false });
       console.error('[RateStore] fetchPenaltyRules error:', err);
@@ -110,6 +121,14 @@ export const useRateStore = create<RateState>((set, get) => ({
   },
 
   fetchBillingConfig: () => {
+    try {
+      const saved = loadFromStorage<BillingConfig>(STORAGE_KEYS.BILLING_CONFIG);
+      if (saved) {
+        set({ billingConfig: normalizeBillingConfig(saved) });
+      }
+    } catch (err) {
+      console.error('[RateStore] fetchBillingConfig error:', err);
+    }
     set({ loading: false });
   },
 
@@ -139,23 +158,31 @@ export const useRateStore = create<RateState>((set, get) => ({
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     });
-    set(state => ({ rateRules: [...state.rateRules, newRule] }));
+    set(state => {
+      const rateRules = [...state.rateRules, newRule];
+      saveToStorage(STORAGE_KEYS.RATE_RULES, rateRules);
+      return { rateRules };
+    });
     console.log('[RateStore] addRateRule:', newRule);
   },
 
   updateRateRule: (id, data) => {
-    set(state => ({
-      rateRules: state.rateRules.map(r =>
+    set(state => {
+      const rateRules = state.rateRules.map(r =>
         r.id === id ? normalizeRateRule({ ...r, ...data, updatedAt: new Date().toISOString() }) : r
-      )
-    }));
+      );
+      saveToStorage(STORAGE_KEYS.RATE_RULES, rateRules);
+      return { rateRules };
+    });
     console.log('[RateStore] updateRateRule:', { id, data });
   },
 
   deleteRateRule: (id) => {
-    set(state => ({
-      rateRules: state.rateRules.filter(r => r.id !== id && r.equipmentId !== 'default')
-    }));
+    set(state => {
+      const rateRules = state.rateRules.filter(r => r.id !== id && r.equipmentId !== 'default');
+      saveToStorage(STORAGE_KEYS.RATE_RULES, rateRules);
+      return { rateRules };
+    });
     console.log('[RateStore] deleteRateRule:', id);
   },
 
@@ -174,14 +201,15 @@ export const useRateStore = create<RateState>((set, get) => ({
       id: `TS${Date.now()}`
     };
 
-    set(state => ({
-      rateRules: state.rateRules.map(r =>
+    set(state => {
+      const rateRules = state.rateRules.map(r =>
         r.id === ruleId
           ? { ...r, timeSlots: [...r.timeSlots, newSlot], updatedAt: new Date().toISOString() }
           : r
-      ),
-      error: null
-    }));
+      );
+      saveToStorage(STORAGE_KEYS.RATE_RULES, rateRules);
+      return { rateRules, error: null };
+    });
     console.log('[RateStore] addTimeSlot:', { ruleId, newSlot });
     return true;
   },
@@ -199,21 +227,22 @@ export const useRateStore = create<RateState>((set, get) => ({
       return false;
     }
 
-    set(state => ({
-      rateRules: state.rateRules.map(r =>
+    set(state => {
+      const rateRules = state.rateRules.map(r =>
         r.id === ruleId
           ? { ...r, timeSlots: updatedSlots, updatedAt: new Date().toISOString() }
           : r
-      ),
-      error: null
-    }));
+      );
+      saveToStorage(STORAGE_KEYS.RATE_RULES, rateRules);
+      return { rateRules, error: null };
+    });
     console.log('[RateStore] updateTimeSlot:', { ruleId, slotId, data });
     return true;
   },
 
   deleteTimeSlot: (ruleId, slotId) => {
-    set(state => ({
-      rateRules: state.rateRules.map(r =>
+    set(state => {
+      const rateRules = state.rateRules.map(r =>
         r.id === ruleId
           ? {
               ...r,
@@ -221,8 +250,10 @@ export const useRateStore = create<RateState>((set, get) => ({
               updatedAt: new Date().toISOString()
             }
           : r
-      )
-    }));
+      );
+      saveToStorage(STORAGE_KEYS.RATE_RULES, rateRules);
+      return { rateRules };
+    });
     console.log('[RateStore] deleteTimeSlot:', { ruleId, slotId });
   },
 
@@ -233,22 +264,28 @@ export const useRateStore = create<RateState>((set, get) => ({
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     });
-    set(state => ({ penaltyRules: [...state.penaltyRules, newRule] }));
+    set(state => {
+      const penaltyRules = [...state.penaltyRules, newRule];
+      saveToStorage(STORAGE_KEYS.PENALTY_RULES, penaltyRules);
+      return { penaltyRules };
+    });
     console.log('[RateStore] addPenaltyRule:', newRule);
   },
 
   updatePenaltyRule: (id, data) => {
-    set(state => ({
-      penaltyRules: state.penaltyRules.map(p =>
+    set(state => {
+      const penaltyRules = state.penaltyRules.map(p =>
         p.id === id ? normalizePenaltyRule({ ...p, ...data, updatedAt: new Date().toISOString() }) : p
-      )
-    }));
+      );
+      saveToStorage(STORAGE_KEYS.PENALTY_RULES, penaltyRules);
+      return { penaltyRules };
+    });
     console.log('[RateStore] updatePenaltyRule:', { id, data });
   },
 
   togglePenaltyRule: (id) => {
-    set(state => ({
-      penaltyRules: state.penaltyRules.map(p =>
+    set(state => {
+      const penaltyRules = state.penaltyRules.map(p =>
         p.id === id
           ? normalizePenaltyRule({
               ...p,
@@ -257,17 +294,21 @@ export const useRateStore = create<RateState>((set, get) => ({
               updatedAt: new Date().toISOString()
             })
           : p
-      )
-    }));
+      );
+      saveToStorage(STORAGE_KEYS.PENALTY_RULES, penaltyRules);
+      return { penaltyRules };
+    });
     console.log('[RateStore] togglePenaltyRule:', id);
   },
 
   updateBillingConfig: (config) => {
     const oldNearExpiryDays = get().billingConfig.nearExpiryDays;
     
-    set(state => ({
-      billingConfig: normalizeBillingConfig({ ...state.billingConfig, ...config })
-    }));
+    set(state => {
+      const billingConfig = normalizeBillingConfig({ ...state.billingConfig, ...config });
+      saveToStorage(STORAGE_KEYS.BILLING_CONFIG, billingConfig);
+      return { billingConfig };
+    });
 
     if (config.nearExpiryDays !== undefined && config.nearExpiryDays !== oldNearExpiryDays) {
       useEquipmentStore.getState().setNearExpiryDays(config.nearExpiryDays);

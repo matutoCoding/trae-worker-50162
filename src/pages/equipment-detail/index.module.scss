@@ -99,6 +99,46 @@
   box-shadow: $shadow-card;
 }
 
+.batchClickable {
+  cursor: pointer;
+
+  &:active {
+    opacity: 0.85;
+    transform: scale(0.99);
+  }
+}
+
+.batchDays {
+  margin-top: $spacing-sm;
+  padding-top: $spacing-sm;
+  border-top: 1rpx solid $color-divider;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+}
+
+.daysNormal {
+  color: $color-success;
+}
+
+.daysNearExpiry {
+  color: $color-warning;
+}
+
+.daysExpired {
+  color: $color-error;
+}
+
+.daysLocked {
+  color: $color-text-tertiary;
+}
+
+.clickHint {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-normal;
+  color: $color-text-tertiary;
+  margin-left: $spacing-xs;
+}
+
 .batchHeader {
   display: flex;
   justify-content: space-between;

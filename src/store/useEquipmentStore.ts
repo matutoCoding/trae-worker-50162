@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import type { Equipment, EquipmentBatch, EquipmentFormData, BatchFormData } from '@/types/equipment';
 import { mockEquipmentList } from '@/data/mockEquipment';
 import { getBatchStatus, generateBatchNo } from '@/utils/date';
+import { saveToStorage, loadFromStorage, STORAGE_KEYS } from '@/utils/storage';
 
 interface EquipmentState {
   equipments: Equipment[];
@@ -85,8 +86,16 @@ export const useEquipmentStore = create<EquipmentState>((set, get) => ({
     }
     set({ loading: true });
     try {
-      const updated = mockEquipmentList.map(eq => normalizeEquipment(eq, nearExpiryDays));
-      set({ equipments: updated, loading: false, _initialized: true });
+      const savedDays = loadFromStorage<number>(STORAGE_KEYS.NEAR_EXPIRY_DAYS);
+      const effectiveDays = savedDays ?? nearExpiryDays;
+      const savedEquipments = loadFromStorage<Equipment[]>(STORAGE_KEYS.EQUIPMENTS);
+      const source = savedEquipments && savedEquipments.length > 0 ? savedEquipments : mockEquipmentList;
+      const updated = source.map(eq => normalizeEquipment(eq, effectiveDays));
+      set({ equipments: updated, nearExpiryDays: effectiveDays, loading: false, _initialized: true });
+      if (!savedEquipments || savedEquipments.length === 0) {
+        saveToStorage(STORAGE_KEYS.EQUIPMENTS, updated);
+        saveToStorage(STORAGE_KEYS.NEAR_EXPIRY_DAYS, effectiveDays);
+      }
     } catch (err) {
       set({ error: '获取设备列表失败', loading: false });
       console.error('[EquipmentStore] fetchEquipments error:', err);
@@ -145,7 +154,11 @@ export const useEquipmentStore = create<EquipmentState>((set, get) => ({
         updatedAt: new Date().toISOString()
       }, nearExpiryDays);
 
-      set(state => ({ equipments: [...state.equipments, newEquipment] }));
+      set(state => {
+        const equipments = [...state.equipments, newEquipment];
+        saveToStorage(STORAGE_KEYS.EQUIPMENTS, equipments);
+        return { equipments };
+      });
       console.log('[EquipmentStore] addEquipment:', newEquipment);
       return true;
     } catch (err) {
@@ -155,20 +168,24 @@ export const useEquipmentStore = create<EquipmentState>((set, get) => ({
   },
 
   updateEquipment: (id: string, data: Partial<EquipmentFormData>) => {
-    set(state => ({
-      equipments: state.equipments.map(eq =>
+    set(state => {
+      const equipments = state.equipments.map(eq =>
         eq.id === id
           ? { ...eq, ...data, updatedAt: new Date().toISOString() }
           : eq
-      )
-    }));
+      );
+      saveToStorage(STORAGE_KEYS.EQUIPMENTS, equipments);
+      return { equipments };
+    });
     console.log('[EquipmentStore] updateEquipment:', { id, data });
   },
 
   deleteEquipment: (id: string) => {
-    set(state => ({
-      equipments: state.equipments.filter(eq => eq.id !== id)
-    }));
+    set(state => {
+      const equipments = state.equipments.filter(eq => eq.id !== id);
+      saveToStorage(STORAGE_KEYS.EQUIPMENTS, equipments);
+      return { equipments };
+    });
     console.log('[EquipmentStore] deleteEquipment:', id);
   },
 
@@ -185,8 +202,8 @@ export const useEquipmentStore = create<EquipmentState>((set, get) => ({
       createdAt: new Date().toISOString()
     };
 
-    set(state => ({
-      equipments: state.equipments.map(eq => {
+    set(state => {
+      const equipments = state.equipments.map(eq => {
         if (eq.id !== equipmentId) return eq;
         return {
           ...eq,
@@ -195,15 +212,17 @@ export const useEquipmentStore = create<EquipmentState>((set, get) => ({
           batches: [...eq.batches, newBatch],
           updatedAt: new Date().toISOString()
         };
-      })
-    }));
+      });
+      saveToStorage(STORAGE_KEYS.EQUIPMENTS, equipments);
+      return { equipments };
+    });
     console.log('[EquipmentStore] addBatch:', { equipmentId, newBatch });
   },
 
   updateBatch: (equipmentId: string, batchId: string, data: Partial<BatchFormData>) => {
     const { nearExpiryDays } = get();
-    set(state => ({
-      equipments: state.equipments.map(eq => {
+    set(state => {
+      const equipments = state.equipments.map(eq => {
         if (eq.id !== equipmentId) return eq;
         return {
           ...eq,
@@ -218,13 +237,15 @@ export const useEquipmentStore = create<EquipmentState>((set, get) => ({
           }),
           updatedAt: new Date().toISOString()
         };
-      })
-    }));
+      });
+      saveToStorage(STORAGE_KEYS.EQUIPMENTS, equipments);
+      return { equipments };
+    });
   },
 
   lockBatch: (equipmentId: string, batchId: string) => {
-    set(state => ({
-      equipments: state.equipments.map(eq => {
+    set(state => {
+      const equipments = state.equipments.map(eq => {
         if (eq.id !== equipmentId) return eq;
         return {
           ...eq,
@@ -233,15 +254,17 @@ export const useEquipmentStore = create<EquipmentState>((set, get) => ({
           ),
           updatedAt: new Date().toISOString()
         };
-      })
-    }));
+      });
+      saveToStorage(STORAGE_KEYS.EQUIPMENTS, equipments);
+      return { equipments };
+    });
     console.log('[EquipmentStore] lockBatch:', { equipmentId, batchId });
   },
 
   unlockBatch: (equipmentId: string, batchId: string) => {
     const { nearExpiryDays } = get();
-    set(state => ({
-      equipments: state.equipments.map(eq => {
+    set(state => {
+      const equipments = state.equipments.map(eq => {
         if (eq.id !== equipmentId) return eq;
         return {
           ...eq,
@@ -252,8 +275,10 @@ export const useEquipmentStore = create<EquipmentState>((set, get) => ({
           }),
           updatedAt: new Date().toISOString()
         };
-      })
-    }));
+      });
+      saveToStorage(STORAGE_KEYS.EQUIPMENTS, equipments);
+      return { equipments };
+    });
     console.log('[EquipmentStore] unlockBatch:', { equipmentId, batchId });
   },
 
@@ -280,8 +305,8 @@ export const useEquipmentStore = create<EquipmentState>((set, get) => ({
   },
 
   reduceStock: (equipmentId: string, batchId: string, quantity: number) => {
-    set(state => ({
-      equipments: state.equipments.map(eq => {
+    set(state => {
+      const equipments = state.equipments.map(eq => {
         if (eq.id !== equipmentId) return eq;
         return {
           ...eq,
@@ -293,14 +318,16 @@ export const useEquipmentStore = create<EquipmentState>((set, get) => ({
           ),
           updatedAt: new Date().toISOString()
         };
-      })
-    }));
+      });
+      saveToStorage(STORAGE_KEYS.EQUIPMENTS, equipments);
+      return { equipments };
+    });
     console.log('[EquipmentStore] reduceStock:', { equipmentId, batchId, quantity });
   },
 
   returnStock: (equipmentId: string, batchId: string, quantity: number) => {
-    set(state => ({
-      equipments: state.equipments.map(eq => {
+    set(state => {
+      const equipments = state.equipments.map(eq => {
         if (eq.id !== equipmentId) return eq;
         return {
           ...eq,
@@ -312,8 +339,10 @@ export const useEquipmentStore = create<EquipmentState>((set, get) => ({
           ),
           updatedAt: new Date().toISOString()
         };
-      })
-    }));
+      });
+      saveToStorage(STORAGE_KEYS.EQUIPMENTS, equipments);
+      return { equipments };
+    });
     console.log('[EquipmentStore] returnStock:', { equipmentId, batchId, quantity });
   },
 
@@ -323,8 +352,8 @@ export const useEquipmentStore = create<EquipmentState>((set, get) => ({
 
   refreshBatchStatuses: () => {
     const { nearExpiryDays } = get();
-    set(state => ({
-      equipments: state.equipments.map(eq => ({
+    set(state => {
+      const equipments = state.equipments.map(eq => ({
         ...eq,
         batches: eq.batches.map(batch => {
           const status = getBatchStatus(batch.expiryDate, nearExpiryDays);
@@ -338,14 +367,17 @@ export const useEquipmentStore = create<EquipmentState>((set, get) => ({
           };
         }),
         updatedAt: new Date().toISOString()
-      }))
-    }));
+      }));
+      saveToStorage(STORAGE_KEYS.EQUIPMENTS, equipments);
+      return { equipments };
+    });
     console.log('[EquipmentStore] refreshBatchStatuses completed with nearExpiryDays=', nearExpiryDays);
   },
 
   setNearExpiryDays: (days: number) => {
     console.log('[EquipmentStore] setNearExpiryDays:', days);
     set({ nearExpiryDays: days });
+    saveToStorage(STORAGE_KEYS.NEAR_EXPIRY_DAYS, days);
     get().refreshBatchStatuses();
   }
 }));

@@ -6,12 +6,14 @@ import { calculateBilling } from '@/utils/billing';
 import { generateOrderNo, getMinutesDiff, getHoursDiff } from '@/utils/date';
 import { useEquipmentStore } from './useEquipmentStore';
 import { useRateStore } from './useRateStore';
+import { saveToStorage, loadFromStorage, STORAGE_KEYS } from '@/utils/storage';
 
 interface OrderState {
   orders: Order[];
   loading: boolean;
   error: string | null;
   selectedOrder: Order | null;
+  _initialized: boolean;
 
   fetchOrders: () => void;
   fetchOrderById: (id: string) => Order | undefined;
@@ -43,16 +45,22 @@ export const useOrderStore = create<OrderState>((set, get) => ({
   loading: false,
   error: null,
   selectedOrder: null,
+  _initialized: false,
 
   fetchOrders: () => {
-    const { orders } = get();
-    if (orders.length > 0) {
+    const { orders, _initialized } = get();
+    if (_initialized && orders.length > 0) {
       set({ loading: false });
       return;
     }
     set({ loading: true });
     try {
-      set({ orders: mockOrderList, loading: false });
+      const saved = loadFromStorage<Order[]>(STORAGE_KEYS.ORDERS);
+      const source = saved && saved.length > 0 ? saved : mockOrderList;
+      set({ orders: source, loading: false, _initialized: true });
+      if (!saved || saved.length === 0) {
+        saveToStorage(STORAGE_KEYS.ORDERS, source);
+      }
     } catch (err) {
       set({ error: '获取订单列表失败', loading: false });
       console.error('[OrderStore] fetchOrders error:', err);
@@ -191,7 +199,11 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         updatedAt: new Date().toISOString()
       };
 
-      set(state => ({ orders: [...state.orders, newOrder], error: null }));
+      set(state => {
+        const orders = [...state.orders, newOrder];
+        saveToStorage(STORAGE_KEYS.ORDERS, orders);
+        return { orders, error: null };
+      });
       console.log('[OrderStore] createOrder:', newOrder);
       return newOrder;
     } catch (err) {
@@ -202,11 +214,13 @@ export const useOrderStore = create<OrderState>((set, get) => ({
   },
 
   updateOrderStatus: (id: string, status: OrderStatus) => {
-    set(state => ({
-      orders: state.orders.map(o =>
+    set(state => {
+      const orders = state.orders.map(o =>
         o.id === id ? { ...o, status, updatedAt: new Date().toISOString() } : o
-      )
-    }));
+      );
+      saveToStorage(STORAGE_KEYS.ORDERS, orders);
+      return { orders };
+    });
     console.log('[OrderStore] updateOrderStatus:', { id, status });
   },
 
@@ -271,8 +285,8 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     const penaltyAmount = Math.round(totalBillingDetail.penaltyAmount * 100) / 100;
     const totalAmount = Math.round((rentalAmount + penaltyAmount + order.deposit) * 100) / 100;
 
-    set(state => ({
-      orders: state.orders.map(o =>
+    set(state => {
+      const orders = state.orders.map(o =>
         o.id === id
           ? {
               ...o,
@@ -288,8 +302,10 @@ export const useOrderStore = create<OrderState>((set, get) => ({
               items: updatedItems
             }
           : o
-      )
-    }));
+      );
+      saveToStorage(STORAGE_KEYS.ORDERS, orders);
+      return { orders };
+    });
     console.log('[OrderStore] completeOrder:', { id, actualEndTime: endTime, totalActualAmount, penaltyAmount });
   },
 
@@ -308,19 +324,21 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       }
     }
 
-    set(state => ({
-      orders: state.orders.map(o =>
+    set(state => {
+      const orders = state.orders.map(o =>
         o.id === id
           ? { ...o, status: 'cancelled', updatedAt: new Date().toISOString() }
           : o
-      )
-    }));
+      );
+      saveToStorage(STORAGE_KEYS.ORDERS, orders);
+      return { orders };
+    });
     console.log('[OrderStore] cancelOrder:', id);
   },
 
   updatePaymentStatus: (id: string, status: 'unpaid' | 'partial' | 'paid', amount?: number) => {
-    set(state => ({
-      orders: state.orders.map(o =>
+    set(state => {
+      const orders = state.orders.map(o =>
         o.id === id
           ? {
               ...o,
@@ -328,8 +346,10 @@ export const useOrderStore = create<OrderState>((set, get) => ({
               updatedAt: new Date().toISOString()
             }
           : o
-      )
-    }));
+      );
+      saveToStorage(STORAGE_KEYS.ORDERS, orders);
+      return { orders };
+    });
     console.log('[OrderStore] updatePaymentStatus:', { id, status, amount });
   },
 
@@ -375,8 +395,8 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     const penaltyAmount = Math.round(totalBilling.penaltyAmount * 100) / 100;
     const totalAmount = Math.round((rentalAmount + penaltyAmount + order.deposit) * 100) / 100;
 
-    set(state => ({
-      orders: state.orders.map(o =>
+    set(state => {
+      const orders = state.orders.map(o =>
         o.id === id
           ? {
               ...o,
@@ -387,8 +407,10 @@ export const useOrderStore = create<OrderState>((set, get) => ({
               billingDetail: totalBilling
             }
           : o
-      )
-    }));
+      );
+      saveToStorage(STORAGE_KEYS.ORDERS, orders);
+      return { orders };
+    });
 
     console.log('[OrderStore] recalculateOrderBilling:', { id, billing: totalBilling });
     return totalBilling;

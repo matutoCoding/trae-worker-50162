@@ -1,5 +1,25 @@
 @use '@/styles/variables.scss' as *;
 
+.pickerValue {
+  padding: 0 $spacing-md;
+  height: $button-height-sm;
+  line-height: $button-height-sm;
+  background: $color-bg-page;
+  border: 1rpx solid $color-border;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  min-width: 320rpx;
+  text-align: right;
+}
+
+.trialBtn {
+  margin-top: $spacing-lg;
+  margin-bottom: 0;
+  background: $color-primary;
+  color: #fff;
+}
+
 .pageContainer {
   padding: $spacing-lg $page-padding $spacing-xl;
   min-height: 100vh;

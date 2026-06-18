@@ -1,12 +1,15 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, ScrollView, Button, Input, PullDownRefresh } from '@tarojs/components';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { View, Text, ScrollView, Button, Input, PullDownRefresh, Picker } from '@tarojs/components';
 import Taro from '@tarojs/taro';
 import classnames from 'classnames';
 import { useRateStore } from '@/store/useRateStore';
 import { useEquipmentStore } from '@/store/useEquipmentStore';
 import RateCard from '@/components/RateCard';
 import EmptyState from '@/components/EmptyState';
-import { formatCurrency } from '@/utils/billing';
+import FeeDetail from '@/components/FeeDetail';
+import { formatCurrency, calculateBilling } from '@/utils/billing';
+import { generateOrderNo } from '@/utils/date';
+import type { BillingDetail } from '@/types/rate';
 import styles from './index.module.scss';
 
 const ConfigPage: React.FC = () => {
@@ -17,6 +20,7 @@ const ConfigPage: React.FC = () => {
     fetchRateRules,
     fetchBillingConfig,
     fetchPenaltyRules,
+    getRateRuleByEquipment,
     updateBillingConfig,
     togglePenaltyRule,
     loading,
@@ -25,14 +29,81 @@ const ConfigPage: React.FC = () => {
 
   const { equipments, fetchEquipments } = useEquipmentStore();
 
-  const [activeTab, setActiveTab] = useState<'rates' | 'penalty' | 'config'>('rates');
+  const [activeTab, setActiveTab] = useState<'rates' | 'penalty' | 'config' | 'trial'>('rates');
   const [refreshing, setRefreshing] = useState(false);
+
+  const [trialEquipmentId, setTrialEquipmentId] = useState<string>('');
+  const [trialQuantity, setTrialQuantity] = useState<string>('1');
+  const [trialStartTime, setTrialStartTime] = useState<string>(
+    new Date(Date.now()).toISOString().slice(0, 16).replace('T', ' ')
+  );
+  const [trialEndTime, setTrialEndTime] = useState<string>(
+    new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString().slice(0, 16).replace('T', ' ')
+  );
+  const [trialResult, setTrialResult] = useState<BillingDetail | null>(null);
 
   const tabs = [
     { key: 'rates', label: '时段费率' },
     { key: 'penalty', label: '罚金规则' },
-    { key: 'config', label: '系统配置' }
+    { key: 'config', label: '系统配置' },
+    { key: 'trial', label: '计费试算' }
   ];
+
+  const equipmentOptions = useMemo(() => equipments.map(eq => ({
+    id: eq.id,
+    label: eq.name
+  })), [equipments]);
+
+  const equipmentIndex = useMemo(() => {
+    const idx = equipmentOptions.findIndex(eq => eq.id === trialEquipmentId);
+    return idx >= 0 ? idx : 0;
+  }, [equipmentOptions, trialEquipmentId]);
+
+  useEffect(() => {
+    if (equipments.length > 0 && !trialEquipmentId) {
+      setTrialEquipmentId(equipments[0].id);
+    }
+  }, [equipments, trialEquipmentId]);
+
+  const handleTrialEquipmentChange = (e) => {
+    const idx = Number(e.detail.value);
+    if (equipmentOptions[idx]) {
+      setTrialEquipmentId(equipmentOptions[idx].id);
+    }
+  };
+
+  const handleTrial = () => {
+    if (!trialEquipmentId) {
+      Taro.showToast({ title: '请选择设备', icon: 'none' });
+      return;
+    }
+    const qty = Number(trialQuantity);
+    if (!qty || qty <= 0) {
+      Taro.showToast({ title: '请输入有效数量', icon: 'none' });
+      return;
+    }
+    const start = new Date(trialStartTime.replace(' ', 'T'));
+    const end = new Date(trialEndTime.replace(' ', 'T'));
+    if (end <= start) {
+      Taro.showToast({ title: '结束时间需晚于开始时间', icon: 'none' });
+      return;
+    }
+
+    const rateRule = getRateRuleByEquipment(trialEquipmentId);
+    if (!rateRule) {
+      Taro.showToast({ title: '该设备未配置费率', icon: 'none' });
+      return;
+    }
+
+    const result = calculateBilling({
+      startTime: start.toISOString(),
+      endTime: end.toISOString(),
+      rateRule,
+      penaltyRule: billingConfig.defaultPenaltyRule,
+      quantity: qty
+    });
+    setTrialResult(result);
+  };
 
   useEffect(() => {
     loadData();
@@ -325,6 +396,126 @@ const ConfigPage: React.FC = () => {
                 />
               </View>
             </View>
+          </>
+        )}
+
+        {activeTab === 'trial' && (
+          <>
+            <Text className={styles.sectionTitle}>
+              计费试算
+              <Text className={styles.sectionDesc}>模拟租赁场景，验证费率计算是否正确</Text>
+            </Text>
+
+            <View className={styles.configCard}>
+              <View className={styles.configRow}>
+                <View>
+                  <Text className={styles.configLabel}>选择设备</Text>
+                  <Text className={styles.configDesc}>选择要试算的设备类型</Text>
+                </View>
+                <Picker
+                  mode="selector"
+                  range={equipmentOptions.map(eq => eq.label)}
+                  value={equipmentIndex}
+                  onChange={handleTrialEquipmentChange}
+                >
+                  <View className={styles.pickerValue}>
+                    {equipmentOptions[equipmentIndex]?.label || '请选择'}
+                  </View>
+                </Picker>
+              </View>
+
+              <View className={styles.configRow}>
+                <View>
+                  <Text className={styles.configLabel}>租赁数量</Text>
+                  <Text className={styles.configDesc}>同时租赁的设备台数</Text>
+                </View>
+                <Input
+                  className={styles.configInput}
+                  type="number"
+                  value={trialQuantity}
+                  onInput={(e) => setTrialQuantity(e.detail.value)}
+                />
+                <Text className={styles.configValue}>台</Text>
+              </View>
+
+              <View className={styles.configRow}>
+                <View>
+                  <Text className={styles.configLabel}>开始时间</Text>
+                  <Text className={styles.configDesc}>租赁起始时间</Text>
+                </View>
+                <Picker
+                  mode="multiSelector"
+                  range={[
+                    Array.from({length: 30}, (_, i) => {
+                      const d = new Date(Date.now() + i * 86400000);
+                      return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+                    }),
+                    Array.from({length: 24}, (_, i) => String(i).padStart(2, '0')),
+                    ['00', '30']
+                  ]}
+                  onChange={(e) => {
+                    const [dateIdx, hourIdx, minIdx] = e.detail.value;
+                    const dateStr = Array.from({length: 30}, (_, i) => {
+                      const d = new Date(Date.now() + i * 86400000);
+                      return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+                    })[dateIdx];
+                    setTrialStartTime(`${dateStr} ${String(hourIdx).padStart(2,'0')}:${minIdx === 0 ? '00' : '30'}`);
+                  }}
+                >
+                  <View className={styles.pickerValue}>
+                    {trialStartTime}
+                  </View>
+                </Picker>
+              </View>
+
+              <View className={styles.configRow}>
+                <View>
+                  <Text className={styles.configLabel}>结束时间</Text>
+                  <Text className={styles.configDesc}>预计归还时间</Text>
+                </View>
+                <Picker
+                  mode="multiSelector"
+                  range={[
+                    Array.from({length: 30}, (_, i) => {
+                      const d = new Date(Date.now() + i * 86400000);
+                      return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+                    }),
+                    Array.from({length: 24}, (_, i) => String(i).padStart(2, '0')),
+                    ['00', '30']
+                  ]}
+                  onChange={(e) => {
+                    const [dateIdx, hourIdx, minIdx] = e.detail.value;
+                    const dateStr = Array.from({length: 30}, (_, i) => {
+                      const d = new Date(Date.now() + i * 86400000);
+                      return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+                    })[dateIdx];
+                    setTrialEndTime(`${dateStr} ${String(hourIdx).padStart(2,'0')}:${minIdx === 0 ? '00' : '30'}`);
+                  }}
+                >
+                  <View className={styles.pickerValue}>
+                    {trialEndTime}
+                  </View>
+                </Picker>
+              </View>
+
+              <Button className={styles.trialBtn} onClick={handleTrial}>
+                开始试算
+              </Button>
+            </View>
+
+            {trialResult && (
+              <FeeDetail
+                billingDetail={trialResult}
+                title="试算结果"
+                showPenalty={true}
+              />
+            )}
+
+            {!trialResult && (
+              <View className={styles.emptyState}>
+                <Text>点击「开始试算」查看计费明细</Text>
+              </View>
+            )}
           </>
         )}
       </ScrollView>
