@@ -18,12 +18,16 @@ export interface Equipment {
   name: string;
   category: string;
   spec: string;
+  specification: string;
   unit: string;
   totalQuantity: number;
   availableQuantity: number;
   dailyRate: number;
+  weeklyRate: number;
+  monthlyRate: number;
   hourlyRate: number;
   imageUrl: string;
+  icon: string;
   description?: string;
   batches: EquipmentBatch[];
   createdAt: string;
@@ -33,11 +37,16 @@ export interface Equipment {
 export interface EquipmentFormData {
   name: string;
   category: string;
-  spec: string;
-  unit: string;
+  spec?: string;
+  specification: string;
+  unit?: string;
   dailyRate: number;
+  weeklyRate?: number;
+  monthlyRate?: number;
   hourlyRate: number;
+  icon: string;
   description?: string;
+  batches: Omit<EquipmentBatch, 'id' | 'equipmentId' | 'availableQuantity' | 'status'>[];
 }
 
 export interface BatchFormData {

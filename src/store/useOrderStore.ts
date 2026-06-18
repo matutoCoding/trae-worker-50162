@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Order, OrderFormData, OrderStatus, OrderItem } from '@/types/order';
+import type { Order, OrderFormData, OrderStatus, OrderItem, BatchAllocation } from '@/types/order';
 import type { BillingDetail } from '@/types/rate';
 import { mockOrderList } from '@/data/mockOrder';
 import { calculateBilling } from '@/utils/billing';
@@ -45,6 +45,11 @@ export const useOrderStore = create<OrderState>((set, get) => ({
   selectedOrder: null,
 
   fetchOrders: () => {
+    const { orders } = get();
+    if (orders.length > 0) {
+      set({ loading: false });
+      return;
+    }
     set({ loading: true });
     try {
       set({ orders: mockOrderList, loading: false });
@@ -96,6 +101,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         }
 
         const batchNos: string[] = [];
+        const batchAllocations: BatchAllocation[] = [];
         let firstBatch: any = null;
         let totalQuantity = 0;
 
@@ -105,6 +111,11 @@ export const useOrderStore = create<OrderState>((set, get) => ({
 
           if (!firstBatch) firstBatch = batch;
           batchNos.push(batch.batchNo);
+          batchAllocations.push({
+            batchId: batch.id,
+            batchNo: batch.batchNo,
+            quantity: alloc.quantity
+          });
           totalQuantity += alloc.quantity;
           equipmentStore.reduceStock(equipment.id, batch.id, alloc.quantity);
         }
@@ -127,6 +138,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
           batchId: firstBatch.id,
           batch: firstBatch,
           batchNos,
+          batchAllocations,
           quantity: totalQuantity,
           startTime: data.startTime,
           endTime: data.endTime,
@@ -238,7 +250,13 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         penaltyHours: totalBillingDetail.penaltyHours + billingDetail.penaltyHours
       };
 
-      equipmentStore.returnStock(item.equipmentId, item.batchId, item.quantity);
+      if (item.batchAllocations && item.batchAllocations.length > 0) {
+        for (const alloc of item.batchAllocations) {
+          equipmentStore.returnStock(item.equipmentId, alloc.batchId, alloc.quantity);
+        }
+      } else {
+        equipmentStore.returnStock(item.equipmentId, item.batchId, item.quantity);
+      }
 
       return {
         ...item,
@@ -281,7 +299,13 @@ export const useOrderStore = create<OrderState>((set, get) => ({
 
     const equipmentStore = useEquipmentStore.getState();
     for (const item of order.items) {
-      equipmentStore.returnStock(item.equipmentId, item.batchId, item.quantity);
+      if (item.batchAllocations && item.batchAllocations.length > 0) {
+        for (const alloc of item.batchAllocations) {
+          equipmentStore.returnStock(item.equipmentId, alloc.batchId, alloc.quantity);
+        }
+      } else {
+        equipmentStore.returnStock(item.equipmentId, item.batchId, item.quantity);
+      }
     }
 
     set(state => ({

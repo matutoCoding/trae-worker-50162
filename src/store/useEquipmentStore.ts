@@ -38,10 +38,34 @@ export const useEquipmentStore = create<EquipmentState>((set, get) => ({
   nearExpiryDays: 7,
 
   fetchEquipments: () => {
+    const { equipments } = get();
+    if (equipments.length > 0) {
+      get().refreshBatchStatuses();
+      set({ loading: false });
+      return;
+    }
     set({ loading: true });
     try {
+      const categoryIcons: Record<string, string> = {
+        '电动工具': '🔧',
+        '手动工具': '🔨',
+        '测量仪器': '📏',
+        '清洁设备': '🧹',
+        '起重设备': '🪜',
+        '升降设备': '🪜',
+        '动力设备': '⚡',
+        '园林工具': '🌿',
+        '焊接设备': '🔥',
+        '其他': '📦'
+      };
+      
       const updated = mockEquipmentList.map(eq => ({
         ...eq,
+        specification: eq.specification || eq.spec,
+        weeklyRate: eq.weeklyRate || eq.dailyRate * 6,
+        monthlyRate: eq.monthlyRate || eq.dailyRate * 25,
+        icon: eq.icon || categoryIcons[eq.category] || '📦',
+        unit: eq.unit || '台',
         batches: eq.batches.map(batch => ({
           ...batch,
           status: getBatchStatus(batch.expiryDate, get().nearExpiryDays) === 'expired'
@@ -65,19 +89,55 @@ export const useEquipmentStore = create<EquipmentState>((set, get) => ({
   },
 
   addEquipment: (data: EquipmentFormData) => {
-    const newEquipment: Equipment = {
-      id: `EQ${Date.now()}`,
-      ...data,
-      totalQuantity: 0,
-      availableQuantity: 0,
-      imageUrl: `https://picsum.photos/id/${Math.floor(Math.random() * 100)}/300/300`,
-      batches: [],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    set(state => ({ equipments: [...state.equipments, newEquipment] }));
-    console.log('[EquipmentStore] addEquipment:', newEquipment);
-    return newEquipment;
+    try {
+      const equipmentId = `EQ${Date.now()}`;
+      let totalQty = 0;
+      
+      const batches = data.batches.map(batchData => {
+        totalQty += batchData.quantity;
+        const status = getBatchStatus(batchData.expiryDate, get().nearExpiryDays);
+        return {
+          id: `${equipmentId}-batch-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+          batchNo: batchData.batchNo,
+          equipmentId,
+          productionDate: batchData.productionDate,
+          expiryDate: batchData.expiryDate,
+          quantity: batchData.quantity,
+          availableQuantity: batchData.quantity,
+          status: status === 'expired' ? 'locked' : status,
+          createdAt: new Date().toISOString(),
+          remark: batchData.remark
+        };
+      });
+
+      const newEquipment: Equipment = {
+        id: equipmentId,
+        name: data.name,
+        category: data.category,
+        spec: data.spec || data.specification,
+        specification: data.specification,
+        unit: data.unit || '台',
+        totalQuantity: totalQty,
+        availableQuantity: totalQty,
+        dailyRate: data.dailyRate,
+        weeklyRate: data.weeklyRate || data.dailyRate * 6,
+        monthlyRate: data.monthlyRate || data.dailyRate * 25,
+        hourlyRate: data.hourlyRate,
+        imageUrl: `https://picsum.photos/id/${Math.floor(Math.random() * 100)}/300/300`,
+        icon: data.icon,
+        description: data.description,
+        batches,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+
+      set(state => ({ equipments: [...state.equipments, newEquipment] }));
+      console.log('[EquipmentStore] addEquipment:', newEquipment);
+      return true;
+    } catch (err) {
+      console.error('[EquipmentStore] addEquipment error:', err);
+      return false;
+    }
   },
 
   updateEquipment: (id: string, data: Partial<EquipmentFormData>) => {

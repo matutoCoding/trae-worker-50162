@@ -48,7 +48,8 @@ const EquipmentPage: React.FC = () => {
       result = result.filter(eq =>
         eq.name.toLowerCase().includes(keyword) ||
         eq.category.toLowerCase().includes(keyword) ||
-        eq.spec.toLowerCase().includes(keyword)
+        (eq.spec && eq.spec.toLowerCase().includes(keyword)) ||
+        (eq.specification && eq.specification.toLowerCase().includes(keyword))
       );
     }
 
@@ -88,7 +89,7 @@ const EquipmentPage: React.FC = () => {
 
   const handleAddEquipment = () => {
     Taro.navigateTo({
-      url: '/pages/equipment-add/index'
+      url: '/pages/add-equipment/index'
     });
   };
 

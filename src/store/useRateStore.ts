@@ -13,7 +13,9 @@ interface RateState {
 
   fetchRateRules: () => void;
   fetchPenaltyRules: () => void;
+  fetchBillingConfig: () => void;
   getRateRuleByEquipment: (equipmentId: string) => RateRule;
+  getRateRuleById: (id: string) => RateRule | undefined;
   getDefaultRateRule: () => RateRule;
 
   addRateRule: (data: Omit<RateRule, 'id' | 'createdAt' | 'updatedAt'>) => void;
@@ -23,6 +25,7 @@ interface RateState {
   addTimeSlot: (ruleId: string, slot: Omit<TimeSlot, 'id'>) => boolean;
   updateTimeSlot: (ruleId: string, slotId: string, data: Partial<TimeSlot>) => boolean;
   deleteTimeSlot: (ruleId: string, slotId: string) => void;
+  removeTimeSlot: (ruleId: string, slotId: string) => void;
 
   addPenaltyRule: (data: Omit<PenaltyRule, 'id' | 'createdAt' | 'updatedAt'>) => void;
   updatePenaltyRule: (id: string, data: Partial<PenaltyRule>) => void;
@@ -41,6 +44,11 @@ export const useRateStore = create<RateState>((set, get) => ({
   selectedRule: null,
 
   fetchRateRules: () => {
+    const { rateRules } = get();
+    if (rateRules.length > 0) {
+      set({ loading: false });
+      return;
+    }
     set({ loading: true });
     try {
       set({ rateRules: mockRateRules, loading: false });
@@ -51,6 +59,11 @@ export const useRateStore = create<RateState>((set, get) => ({
   },
 
   fetchPenaltyRules: () => {
+    const { penaltyRules } = get();
+    if (penaltyRules.length > 0) {
+      set({ loading: false });
+      return;
+    }
     set({ loading: true });
     try {
       set({ penaltyRules: mockPenaltyRules, loading: false });
@@ -67,6 +80,18 @@ export const useRateStore = create<RateState>((set, get) => ({
 
   getDefaultRateRule: () => {
     return get().rateRules.find(r => r.equipmentId === 'default') || get().rateRules[0];
+  },
+
+  getRateRuleById: (id: string) => {
+    return get().rateRules.find(r => r.id === id);
+  },
+
+  fetchBillingConfig: () => {
+    set({ loading: false });
+  },
+
+  removeTimeSlot: (ruleId: string, slotId: string) => {
+    get().deleteTimeSlot(ruleId, slotId);
   },
 
   addRateRule: (data) => {

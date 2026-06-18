@@ -12,7 +12,7 @@ const DEFAULT_SLOT_NAMES = ['早高峰', '日间', '晚高峰', '夜间', '周�
 const RateEditPage: React.FC = () => {
   const router = useRouter();
   const rateId = router.params.id as string;
-  const { getRateRuleById, addTimeSlot, updateTimeSlot, removeTimeSlot, loading } = useRateStore();
+  const { getRateRuleById, addTimeSlot, updateTimeSlot, removeTimeSlot, updateRateRule, loading } = useRateStore();
   const { getEquipmentById } = useEquipmentStore();
 
   const [rateRule, setRateRule] = useState<any>(null);
@@ -123,6 +123,8 @@ const RateEditPage: React.FC = () => {
     }
 
     try {
+      updateRateRule(rateId, { baseRate: Number(baseRate) });
+
       for (const slot of timeSlots) {
         const slotData = {
           name: slot.name,

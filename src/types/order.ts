@@ -3,6 +3,12 @@ import type { BillingDetail, TimeSegment } from './rate';
 
 export type OrderStatus = 'pending' | 'active' | 'completed' | 'overdue' | 'cancelled';
 
+export interface BatchAllocation {
+  batchId: string;
+  batchNo: string;
+  quantity: number;
+}
+
 export interface OrderItem {
   id: string;
   orderId: string;
@@ -11,6 +17,7 @@ export interface OrderItem {
   batchId: string;
   batch: EquipmentBatch;
   batchNos: string[];
+  batchAllocations: BatchAllocation[];
   quantity: number;
   startTime: string;
   endTime: string;

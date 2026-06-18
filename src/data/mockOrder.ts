@@ -43,6 +43,11 @@ const generateOrder = (
 
   const batch = equipment.batches.find(b => b.status === 'normal' || b.status === 'near_expiry')!;
   const batchNos = [batch.batchNo];
+  const batchAllocations = [{
+    batchId: batch.id,
+    batchNo: batch.batchNo,
+    quantity
+  }];
   const subtotal = Math.round(billingDetail.totalAmount * 100) / 100;
 
   const rentalDuration = Math.round(getHoursDiff(startTime, endTime) * 100) / 100;
@@ -66,6 +71,7 @@ const generateOrder = (
         batchId: batch.id,
         batch,
         batchNos,
+        batchAllocations,
         quantity,
         startTime,
         endTime,

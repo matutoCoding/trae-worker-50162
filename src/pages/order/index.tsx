@@ -87,7 +87,6 @@ const OrderPage: React.FC = () => {
         if (res.confirm) {
           useOrderStore.getState().completeOrder(id);
           Taro.showToast({ title: '归还成功', icon: 'success' });
-          loadData();
         }
       }
     });
@@ -101,7 +100,6 @@ const OrderPage: React.FC = () => {
         if (res.confirm) {
           useOrderStore.getState().cancelOrder(id);
           Taro.showToast({ title: '已取消', icon: 'success' });
-          loadData();
         }
       }
     });
@@ -168,7 +166,6 @@ const OrderPage: React.FC = () => {
         remark: '',
         items: []
       });
-      loadData();
     } else if (error) {
       Taro.showToast({ title: error, icon: 'none' });
     }
