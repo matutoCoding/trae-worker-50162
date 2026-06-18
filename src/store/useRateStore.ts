@@ -1,7 +1,9 @@
 import { create } from 'zustand';
 import type { RateRule, TimeSlot, PenaltyRule, BillingConfig } from '@/types/rate';
+import { DEFAULT_BILLING_CONFIG } from '@/types/rate';
 import { mockRateRules, mockPenaltyRules, mockBillingConfig } from '@/data/mockRate';
 import { validateTimeSlotOverlap } from '@/utils/billing';
+import { useEquipmentStore } from './useEquipmentStore';
 
 interface RateState {
   rateRules: RateRule[];
@@ -10,6 +12,7 @@ interface RateState {
   loading: boolean;
   error: string | null;
   selectedRule: RateRule | null;
+  _initialized: boolean;
 
   fetchRateRules: () => void;
   fetchPenaltyRules: () => void;
@@ -35,23 +38,55 @@ interface RateState {
   setSelectedRule: (rule: RateRule | null) => void;
 }
 
+const normalizeRateRule = (rule: RateRule): RateRule => ({
+  ...rule,
+  baseRate: rule.baseRate ?? rule.baseHourlyRate ?? 0,
+  baseHourlyRate: rule.baseHourlyRate ?? rule.baseRate,
+  dailyRate: rule.dailyRate ?? rule.baseDailyRate,
+  baseDailyRate: rule.baseDailyRate ?? rule.dailyRate
+});
+
+const normalizePenaltyRule = (rule: PenaltyRule): PenaltyRule => ({
+  ...rule,
+  gracePeriodHours: rule.gracePeriodHours ?? rule.gracePeriod ?? 0,
+  gracePeriod: rule.gracePeriod ?? rule.gracePeriodHours ?? 0,
+  enabled: rule.enabled ?? rule.isEnabled ?? false,
+  isEnabled: rule.isEnabled ?? rule.enabled
+});
+
+const normalizeBillingConfig = (config: BillingConfig): BillingConfig => ({
+  ...DEFAULT_BILLING_CONFIG,
+  ...config,
+  nearExpiryDays: config.nearExpiryDays ?? DEFAULT_BILLING_CONFIG.nearExpiryDays,
+  minBillingUnit: config.minBillingUnit ?? DEFAULT_BILLING_CONFIG.minBillingUnit,
+  timePrecision: config.timePrecision ?? DEFAULT_BILLING_CONFIG.timePrecision,
+  amountPrecision: config.amountPrecision ?? DEFAULT_BILLING_CONFIG.amountPrecision,
+  roundingMode: config.roundingMode ?? DEFAULT_BILLING_CONFIG.roundingMode,
+  autoLockExpired: config.autoLockExpired ?? DEFAULT_BILLING_CONFIG.autoLockExpired,
+  enableOverduePenalty: config.enableOverduePenalty ?? DEFAULT_BILLING_CONFIG.enableOverduePenalty,
+  defaultGracePeriodHours: config.defaultGracePeriodHours ?? DEFAULT_BILLING_CONFIG.defaultGracePeriodHours,
+  enableOverdueReminder: config.enableOverdueReminder ?? DEFAULT_BILLING_CONFIG.enableOverdueReminder
+});
+
 export const useRateStore = create<RateState>((set, get) => ({
   rateRules: [],
   penaltyRules: [],
-  billingConfig: mockBillingConfig,
+  billingConfig: normalizeBillingConfig(mockBillingConfig),
   loading: false,
   error: null,
   selectedRule: null,
+  _initialized: false,
 
   fetchRateRules: () => {
-    const { rateRules } = get();
-    if (rateRules.length > 0) {
+    const { rateRules, _initialized } = get();
+    if (_initialized && rateRules.length > 0) {
       set({ loading: false });
       return;
     }
     set({ loading: true });
     try {
-      set({ rateRules: mockRateRules, loading: false });
+      const normalized = mockRateRules.map(normalizeRateRule);
+      set({ rateRules: normalized, loading: false, _initialized: true });
     } catch (err) {
       set({ error: '获取费率规则失败', loading: false });
       console.error('[RateStore] fetchRateRules error:', err);
@@ -59,23 +94,29 @@ export const useRateStore = create<RateState>((set, get) => ({
   },
 
   fetchPenaltyRules: () => {
-    const { penaltyRules } = get();
-    if (penaltyRules.length > 0) {
+    const { penaltyRules, _initialized } = get();
+    if (_initialized && penaltyRules.length > 0) {
       set({ loading: false });
       return;
     }
     set({ loading: true });
     try {
-      set({ penaltyRules: mockPenaltyRules, loading: false });
+      const normalized = mockPenaltyRules.map(normalizePenaltyRule);
+      set({ penaltyRules: normalized, loading: false });
     } catch (err) {
       set({ error: '获取罚金规则失败', loading: false });
       console.error('[RateStore] fetchPenaltyRules error:', err);
     }
   },
 
+  fetchBillingConfig: () => {
+    set({ loading: false });
+  },
+
   getRateRuleByEquipment: (equipmentId: string) => {
     const rule = get().rateRules.find(r => r.equipmentId === equipmentId);
-    return rule || get().rateRules.find(r => r.equipmentId === 'default') || get().rateRules[0];
+    const defaultRule = get().rateRules.find(r => r.equipmentId === 'default');
+    return rule || defaultRule || get().rateRules[0];
   },
 
   getDefaultRateRule: () => {
@@ -83,11 +124,8 @@ export const useRateStore = create<RateState>((set, get) => ({
   },
 
   getRateRuleById: (id: string) => {
-    return get().rateRules.find(r => r.id === id);
-  },
-
-  fetchBillingConfig: () => {
-    set({ loading: false });
+    const rule = get().rateRules.find(r => r.id === id);
+    return rule ? normalizeRateRule(rule) : undefined;
   },
 
   removeTimeSlot: (ruleId: string, slotId: string) => {
@@ -95,12 +133,12 @@ export const useRateStore = create<RateState>((set, get) => ({
   },
 
   addRateRule: (data) => {
-    const newRule: RateRule = {
+    const newRule: RateRule = normalizeRateRule({
       ...data,
       id: `RULE${Date.now()}`,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
-    };
+    });
     set(state => ({ rateRules: [...state.rateRules, newRule] }));
     console.log('[RateStore] addRateRule:', newRule);
   },
@@ -108,7 +146,7 @@ export const useRateStore = create<RateState>((set, get) => ({
   updateRateRule: (id, data) => {
     set(state => ({
       rateRules: state.rateRules.map(r =>
-        r.id === id ? { ...r, ...data, updatedAt: new Date().toISOString() } : r
+        r.id === id ? normalizeRateRule({ ...r, ...data, updatedAt: new Date().toISOString() }) : r
       )
     }));
     console.log('[RateStore] updateRateRule:', { id, data });
@@ -189,12 +227,12 @@ export const useRateStore = create<RateState>((set, get) => ({
   },
 
   addPenaltyRule: (data) => {
-    const newRule: PenaltyRule = {
+    const newRule: PenaltyRule = normalizePenaltyRule({
       ...data,
       id: `PEN${Date.now()}`,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
-    };
+    });
     set(state => ({ penaltyRules: [...state.penaltyRules, newRule] }));
     console.log('[RateStore] addPenaltyRule:', newRule);
   },
@@ -202,7 +240,7 @@ export const useRateStore = create<RateState>((set, get) => ({
   updatePenaltyRule: (id, data) => {
     set(state => ({
       penaltyRules: state.penaltyRules.map(p =>
-        p.id === id ? { ...p, ...data, updatedAt: new Date().toISOString() } : p
+        p.id === id ? normalizePenaltyRule({ ...p, ...data, updatedAt: new Date().toISOString() }) : p
       )
     }));
     console.log('[RateStore] updatePenaltyRule:', { id, data });
@@ -211,20 +249,33 @@ export const useRateStore = create<RateState>((set, get) => ({
   togglePenaltyRule: (id) => {
     set(state => ({
       penaltyRules: state.penaltyRules.map(p =>
-        p.id === id ? { ...p, isEnabled: !p.isEnabled, updatedAt: new Date().toISOString() } : p
+        p.id === id
+          ? normalizePenaltyRule({
+              ...p,
+              enabled: !p.enabled,
+              isEnabled: !p.enabled,
+              updatedAt: new Date().toISOString()
+            })
+          : p
       )
     }));
     console.log('[RateStore] togglePenaltyRule:', id);
   },
 
   updateBillingConfig: (config) => {
+    const oldNearExpiryDays = get().billingConfig.nearExpiryDays;
+    
     set(state => ({
-      billingConfig: { ...state.billingConfig, ...config }
+      billingConfig: normalizeBillingConfig({ ...state.billingConfig, ...config })
     }));
+
+    if (config.nearExpiryDays !== undefined && config.nearExpiryDays !== oldNearExpiryDays) {
+      useEquipmentStore.getState().setNearExpiryDays(config.nearExpiryDays);
+    }
     console.log('[RateStore] updateBillingConfig:', config);
   },
 
   setSelectedRule: (rule) => {
-    set({ selectedRule: rule });
+    set({ selectedRule: rule ? normalizeRateRule(rule) : null });
   }
 }));

@@ -7,21 +7,26 @@ import styles from './index.module.scss';
 
 interface RateCardProps {
   rateRule: RateRule;
+  equipmentName?: string;
   onEdit?: () => void;
 }
 
-const RateCard: React.FC<RateCardProps> = ({ rateRule, onEdit }) => {
+const RateCard: React.FC<RateCardProps> = ({ rateRule, equipmentName, onEdit }) => {
+  const baseHourly = rateRule.baseRate ?? rateRule.baseHourlyRate ?? 0;
+  const baseDaily = rateRule.dailyRate ?? rateRule.baseDailyRate ?? 0;
+  const displayName = equipmentName || rateRule.equipmentName || '通用费率';
+  
   return (
     <View className={styles.card}>
       <View className={styles.header}>
         <View className={styles.info}>
           <View>
-            <Text className={styles.equipmentName}>{rateRule.equipmentName}</Text>
+            <Text className={styles.equipmentName}>{displayName}</Text>
             {rateRule.isDefault && <Text className={styles.defaultBadge}>默认</Text>}
           </View>
           <Text className={styles.baseRate}>
-            基础费率：<Text className={styles.hourlyRate}>{formatCurrency(rateRule.baseHourlyRate)}</Text>/小时
-            {' | '}{formatCurrency(rateRule.baseDailyRate)}/天
+            基础费率：<Text className={styles.hourlyRate}>{formatCurrency(baseHourly)}</Text>/小时
+            {baseDaily > 0 && <> {' | '}{formatCurrency(baseDaily)}/天</>}
           </Text>
         </View>
       </View>

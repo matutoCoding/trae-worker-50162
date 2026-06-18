@@ -106,11 +106,12 @@ export const calculateBilling = ({
   quantity = 1,
   roundingRule = 'up'
 }: CalculateBillingParams): BillingDetail => {
+  const baseHourlyRate = rateRule.baseRate ?? rateRule.baseHourlyRate ?? 0;
   const segments = splitTimeSegments({
     startTime,
     endTime,
     timeSlots: rateRule.timeSlots,
-    baseRate: rateRule.baseHourlyRate
+    baseRate: baseHourlyRate
   });
 
   let baseAmount = segments.reduce((sum, seg) => sum + seg.amount, 0);
@@ -121,28 +122,33 @@ export const calculateBilling = ({
   let penaltyAmount = 0;
   let penaltyHours = 0;
 
-  if (penaltyRule && penaltyRule.isEnabled) {
-    const now = dayjs();
-    const scheduledEnd = dayjs(endTime);
-    const gracePeriodMs = penaltyRule.gracePeriod * 60 * 1000;
+  if (penaltyRule) {
+    const isPenaltyEnabled = penaltyRule.enabled ?? penaltyRule.isEnabled ?? false;
+    const gracePeriodMinutes = penaltyRule.gracePeriodHours ?? penaltyRule.gracePeriod ?? 0;
+    
+    if (isPenaltyEnabled) {
+      const now = dayjs();
+      const scheduledEnd = dayjs(endTime);
+      const gracePeriodMs = gracePeriodMinutes * 60 * 1000;
 
-    if (now.isAfter(scheduledEnd.add(gracePeriodMs, 'millisecond'))) {
-      const overdueMinutes = getMinutesDiff(scheduledEnd.toISOString(), now.toISOString());
-      const effectiveOverdueMinutes = Math.max(0, overdueMinutes - penaltyRule.gracePeriod);
+      if (now.isAfter(scheduledEnd.add(gracePeriodMs, 'millisecond'))) {
+        const overdueMinutes = getMinutesDiff(scheduledEnd.toISOString(), now.toISOString());
+        const effectiveOverdueMinutes = Math.max(0, overdueMinutes - gracePeriodMinutes);
 
-      if (effectiveOverdueMinutes > 0) {
-        penaltyHours = roundDuration(effectiveOverdueMinutes / 60, roundingRule);
-        const penaltyRate = rateRule.baseHourlyRate * penaltyRule.penaltyRate;
-        penaltyAmount = Math.round(penaltyHours * penaltyRate * 100) / 100;
+        if (effectiveOverdueMinutes > 0) {
+          penaltyHours = roundDuration(effectiveOverdueMinutes / 60, roundingRule);
+          const penaltyRate = baseHourlyRate * penaltyRule.penaltyRate;
+          penaltyAmount = Math.round(penaltyHours * penaltyRate * 100) / 100;
 
-        console.log('[Billing] 超期罚金计算', {
-          overdueMinutes,
-          gracePeriod: penaltyRule.gracePeriod,
-          effectiveOverdueMinutes,
-          penaltyHours,
-          penaltyRate,
-          penaltyAmount
-        });
+          console.log('[Billing] 超期罚金计算', {
+            overdueMinutes,
+            gracePeriod: gracePeriodMinutes,
+            effectiveOverdueMinutes,
+            penaltyHours,
+            penaltyRate,
+            penaltyAmount
+          });
+        }
       }
     }
   }

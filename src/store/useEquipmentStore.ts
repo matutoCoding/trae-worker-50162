@@ -9,11 +9,12 @@ interface EquipmentState {
   error: string | null;
   selectedEquipment: Equipment | null;
   nearExpiryDays: number;
+  _initialized: boolean;
 
   fetchEquipments: () => void;
   fetchEquipmentById: (id: string) => Equipment | undefined;
   getEquipmentById: (id: string) => Equipment | undefined;
-  addEquipment: (data: EquipmentFormData) => Equipment;
+  addEquipment: (data: EquipmentFormData) => boolean;
   updateEquipment: (id: string, data: Partial<EquipmentFormData>) => void;
   deleteEquipment: (id: string) => void;
 
@@ -28,7 +29,44 @@ interface EquipmentState {
 
   setSelectedEquipment: (equipment: Equipment | null) => void;
   refreshBatchStatuses: () => void;
+  setNearExpiryDays: (days: number) => void;
 }
+
+const normalizeEquipment = (eq: any, nearExpiryDays: number): Equipment => {
+  const categoryIcons: Record<string, string> = {
+    '电动工具': '🔧',
+    '手动工具': '🔨',
+    '测量仪器': '📏',
+    '清洁设备': '🧹',
+    '起重设备': '🪜',
+    '升降设备': '🪜',
+    '动力设备': '⚡',
+    '园林工具': '🌿',
+    '焊接设备': '🔥',
+    '其他': '📦'
+  };
+
+  return {
+    ...eq,
+    specification: eq.specification || eq.spec || '',
+    weeklyRate: eq.weeklyRate || eq.dailyRate * 6,
+    monthlyRate: eq.monthlyRate || eq.dailyRate * 25,
+    icon: eq.icon || categoryIcons[eq.category] || '📦',
+    unit: eq.unit || '台',
+    hourlyRate: eq.hourlyRate || 0,
+    dailyRate: eq.dailyRate || 0,
+    totalQuantity: eq.totalQuantity || 0,
+    availableQuantity: eq.availableQuantity || 0,
+    batches: (eq.batches || []).map((batch: any) => {
+      const status = getBatchStatus(batch.expiryDate, nearExpiryDays);
+      return {
+        ...batch,
+        availableQuantity: batch.availableQuantity ?? batch.quantity,
+        status: batch.status === 'locked' ? 'locked' : status === 'expired' ? 'locked' : status
+      };
+    })
+  };
+};
 
 export const useEquipmentStore = create<EquipmentState>((set, get) => ({
   equipments: [],
@@ -36,44 +74,19 @@ export const useEquipmentStore = create<EquipmentState>((set, get) => ({
   error: null,
   selectedEquipment: null,
   nearExpiryDays: 7,
+  _initialized: false,
 
   fetchEquipments: () => {
-    const { equipments } = get();
-    if (equipments.length > 0) {
+    const { equipments, _initialized, nearExpiryDays } = get();
+    if (_initialized && equipments.length > 0) {
       get().refreshBatchStatuses();
       set({ loading: false });
       return;
     }
     set({ loading: true });
     try {
-      const categoryIcons: Record<string, string> = {
-        '电动工具': '🔧',
-        '手动工具': '🔨',
-        '测量仪器': '📏',
-        '清洁设备': '🧹',
-        '起重设备': '🪜',
-        '升降设备': '🪜',
-        '动力设备': '⚡',
-        '园林工具': '🌿',
-        '焊接设备': '🔥',
-        '其他': '📦'
-      };
-      
-      const updated = mockEquipmentList.map(eq => ({
-        ...eq,
-        specification: eq.specification || eq.spec,
-        weeklyRate: eq.weeklyRate || eq.dailyRate * 6,
-        monthlyRate: eq.monthlyRate || eq.dailyRate * 25,
-        icon: eq.icon || categoryIcons[eq.category] || '📦',
-        unit: eq.unit || '台',
-        batches: eq.batches.map(batch => ({
-          ...batch,
-          status: getBatchStatus(batch.expiryDate, get().nearExpiryDays) === 'expired'
-            ? 'locked'
-            : getBatchStatus(batch.expiryDate, get().nearExpiryDays)
-        }))
-      }));
-      set({ equipments: updated, loading: false });
+      const updated = mockEquipmentList.map(eq => normalizeEquipment(eq, nearExpiryDays));
+      set({ equipments: updated, loading: false, _initialized: true });
     } catch (err) {
       set({ error: '获取设备列表失败', loading: false });
       console.error('[EquipmentStore] fetchEquipments error:', err);
@@ -90,12 +103,13 @@ export const useEquipmentStore = create<EquipmentState>((set, get) => ({
 
   addEquipment: (data: EquipmentFormData) => {
     try {
+      const { nearExpiryDays } = get();
       const equipmentId = `EQ${Date.now()}`;
       let totalQty = 0;
-      
-      const batches = data.batches.map(batchData => {
+
+      const batches = (data.batches || []).map(batchData => {
         totalQty += batchData.quantity;
-        const status = getBatchStatus(batchData.expiryDate, get().nearExpiryDays);
+        const status = getBatchStatus(batchData.expiryDate, nearExpiryDays);
         return {
           id: `${equipmentId}-batch-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
           batchNo: batchData.batchNo,
@@ -107,10 +121,10 @@ export const useEquipmentStore = create<EquipmentState>((set, get) => ({
           status: status === 'expired' ? 'locked' : status,
           createdAt: new Date().toISOString(),
           remark: batchData.remark
-        };
+        } as EquipmentBatch;
       });
 
-      const newEquipment: Equipment = {
+      const newEquipment = normalizeEquipment({
         id: equipmentId,
         name: data.name,
         category: data.category,
@@ -129,7 +143,7 @@ export const useEquipmentStore = create<EquipmentState>((set, get) => ({
         batches,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
-      };
+      }, nearExpiryDays);
 
       set(state => ({ equipments: [...state.equipments, newEquipment] }));
       console.log('[EquipmentStore] addEquipment:', newEquipment);
@@ -159,7 +173,8 @@ export const useEquipmentStore = create<EquipmentState>((set, get) => ({
   },
 
   addBatch: (equipmentId: string, data: BatchFormData) => {
-    const status = getBatchStatus(data.expiryDate, get().nearExpiryDays);
+    const { nearExpiryDays } = get();
+    const status = getBatchStatus(data.expiryDate, nearExpiryDays);
     const newBatch: EquipmentBatch = {
       id: `${equipmentId}-batch-${Date.now()}`,
       batchNo: data.batchNo || generateBatchNo(),
@@ -186,6 +201,7 @@ export const useEquipmentStore = create<EquipmentState>((set, get) => ({
   },
 
   updateBatch: (equipmentId: string, batchId: string, data: Partial<BatchFormData>) => {
+    const { nearExpiryDays } = get();
     set(state => ({
       equipments: state.equipments.map(eq => {
         if (eq.id !== equipmentId) return eq;
@@ -195,7 +211,7 @@ export const useEquipmentStore = create<EquipmentState>((set, get) => ({
             if (batch.id !== batchId) return batch;
             const updated = { ...batch, ...data };
             if (data.expiryDate) {
-              const status = getBatchStatus(data.expiryDate, get().nearExpiryDays);
+              const status = getBatchStatus(data.expiryDate, nearExpiryDays);
               updated.status = status === 'expired' ? 'locked' : status;
             }
             return updated;
@@ -223,6 +239,7 @@ export const useEquipmentStore = create<EquipmentState>((set, get) => ({
   },
 
   unlockBatch: (equipmentId: string, batchId: string) => {
+    const { nearExpiryDays } = get();
     set(state => ({
       equipments: state.equipments.map(eq => {
         if (eq.id !== equipmentId) return eq;
@@ -230,7 +247,7 @@ export const useEquipmentStore = create<EquipmentState>((set, get) => ({
           ...eq,
           batches: eq.batches.map(batch => {
             if (batch.id !== batchId) return batch;
-            const status = getBatchStatus(batch.expiryDate, get().nearExpiryDays);
+            const status = getBatchStatus(batch.expiryDate, nearExpiryDays);
             return { ...batch, status: status === 'expired' ? 'locked' : status };
           }),
           updatedAt: new Date().toISOString()
@@ -268,10 +285,10 @@ export const useEquipmentStore = create<EquipmentState>((set, get) => ({
         if (eq.id !== equipmentId) return eq;
         return {
           ...eq,
-          availableQuantity: eq.availableQuantity - quantity,
+          availableQuantity: Math.max(0, eq.availableQuantity - quantity),
           batches: eq.batches.map(batch =>
             batch.id === batchId
-              ? { ...batch, availableQuantity: batch.availableQuantity - quantity }
+              ? { ...batch, availableQuantity: Math.max(0, batch.availableQuantity - quantity) }
               : batch
           ),
           updatedAt: new Date().toISOString()
@@ -313,12 +330,22 @@ export const useEquipmentStore = create<EquipmentState>((set, get) => ({
           const status = getBatchStatus(batch.expiryDate, nearExpiryDays);
           return {
             ...batch,
-            status: batch.status === 'locked' ? 'locked' : status === 'expired' ? 'locked' : status
+            status: batch.status === 'locked'
+              ? 'locked'
+              : status === 'expired'
+                ? 'locked'
+                : status
           };
         }),
         updatedAt: new Date().toISOString()
       }))
     }));
-    console.log('[EquipmentStore] refreshBatchStatuses completed');
+    console.log('[EquipmentStore] refreshBatchStatuses completed with nearExpiryDays=', nearExpiryDays);
+  },
+
+  setNearExpiryDays: (days: number) => {
+    console.log('[EquipmentStore] setNearExpiryDays:', days);
+    set({ nearExpiryDays: days });
+    get().refreshBatchStatuses();
   }
 }));

@@ -84,18 +84,11 @@ const ConfigPage: React.FC = () => {
   const handleConfigChange = (key: string, value: string) => {
     const numValue = Number(value);
     if (isNaN(numValue)) return;
-    
-    updateBillingConfig({
-      ...billingConfig,
-      [key]: numValue
-    });
+    updateBillingConfig({ [key]: numValue });
   };
 
   const handleToggleConfig = (key: string) => {
-    updateBillingConfig({
-      ...billingConfig,
-      [key]: !billingConfig[key]
-    });
+    updateBillingConfig({ [key]: !billingConfig[key] });
   };
 
   const rateRulesWithEquipName = rateRules.map(rule => ({
@@ -164,24 +157,31 @@ const ConfigPage: React.FC = () => {
                 <Text>加载中...</Text>
               </View>
             ) : penaltyRules.length > 0 ? (
-              penaltyRules.map(penalty => (
-                <View key={penalty.id} className={styles.penaltyCard}>
-                  <View className={styles.penaltyInfo}>
-                    <Text className={styles.penaltyName}>{penalty.name}</Text>
-                    <Text className={styles.penaltyDetail}>
-                      {penalty.description}
-                    </Text>
-                    <Text className={styles.penaltyDetail}>
-                      罚金费率：{formatCurrency(penalty.penaltyRate)}/{penalty.penaltyUnit === 'hourly' ? '小时' : '天'}
-                      {penalty.gracePeriodHours > 0 && `，宽限期${penalty.gracePeriodHours}小时`}
-                    </Text>
+              penaltyRules.map(penalty => {
+                const unit = (penalty.penaltyUnit === 'hourly' || penalty.penaltyUnit === 'hour') ? '小时' : '天';
+                const graceHours = penalty.gracePeriodHours ?? penalty.gracePeriod ?? 0;
+                const isEnabled = penalty.enabled ?? penalty.isEnabled ?? false;
+                return (
+                  <View key={penalty.id} className={styles.penaltyCard}>
+                    <View className={styles.penaltyInfo}>
+                      <Text className={styles.penaltyName}>{penalty.name}</Text>
+                      {penalty.description && (
+                        <Text className={styles.penaltyDetail}>
+                          {penalty.description}
+                        </Text>
+                      )}
+                      <Text className={styles.penaltyDetail}>
+                        罚金费率：{formatCurrency(penalty.penaltyRate)}/{unit}
+                        {graceHours > 0 && `，宽限期${graceHours}小时`}
+                      </Text>
+                    </View>
+                    <View
+                      className={classnames(styles.switch, isEnabled && styles.active)}
+                      onClick={() => handleTogglePenalty(penalty.id)}
+                    />
                   </View>
-                  <View
-                    className={classnames(styles.switch, penalty.enabled && styles.active)}
-                    onClick={() => handleTogglePenalty(penalty.id)}
-                  />
-                </View>
-              ))
+                );
+              })
             ) : (
               <View className={styles.emptyState}>
                 <Text>暂无罚金规则</Text>

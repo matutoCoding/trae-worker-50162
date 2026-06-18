@@ -1,4 +1,5 @@
 import type { RateRule, PenaltyRule, BillingConfig } from '@/types/rate';
+import { DEFAULT_BILLING_CONFIG } from '@/types/rate';
 
 const now = new Date().toISOString();
 
@@ -7,7 +8,9 @@ export const mockRateRules: RateRule[] = [
     id: 'RULE001',
     equipmentId: 'EQ001',
     equipmentName: '博世电锤GBH2-26',
+    baseRate: 10,
     baseHourlyRate: 10,
+    dailyRate: 50,
     baseDailyRate: 50,
     timeSlots: [
       { id: 'TS001', name: '早高峰', startTime: '08:00', endTime: '12:00', rate: 12, order: 1 },
@@ -24,7 +27,9 @@ export const mockRateRules: RateRule[] = [
     id: 'RULE002',
     equipmentId: 'EQ002',
     equipmentName: '东成角磨机S1M-FF03',
+    baseRate: 7,
     baseHourlyRate: 7,
+    dailyRate: 35,
     baseDailyRate: 35,
     timeSlots: [
       { id: 'TS006', name: '工作时间', startTime: '08:00', endTime: '18:00', rate: 8, order: 1 },
@@ -39,7 +44,9 @@ export const mockRateRules: RateRule[] = [
     id: 'RULE003',
     equipmentId: 'EQ003',
     equipmentName: '莱卡激光测距仪D2',
+    baseRate: 15,
     baseHourlyRate: 15,
+    dailyRate: 80,
     baseDailyRate: 80,
     timeSlots: [
       { id: 'TS009', name: '工作日', startTime: '08:00', endTime: '18:00', rate: 15, order: 1 },
@@ -54,7 +61,9 @@ export const mockRateRules: RateRule[] = [
     id: 'RULE004',
     equipmentId: 'default',
     equipmentName: '通用费率',
+    baseRate: 8,
     baseHourlyRate: 8,
+    dailyRate: 40,
     baseDailyRate: 40,
     timeSlots: [
       { id: 'TS012', name: '工作日白天', startTime: '08:00', endTime: '18:00', rate: 8, order: 1 },
@@ -72,9 +81,12 @@ export const mockPenaltyRules: PenaltyRule[] = [
   {
     id: 'PEN001',
     name: '标准超期罚金',
+    description: '适用于大部分设备的标准超期罚金规则',
     penaltyRate: 1.5,
-    penaltyUnit: 'hour',
-    gracePeriod: 30,
+    penaltyUnit: 'hourly',
+    gracePeriod: 120,
+    gracePeriodHours: 2,
+    enabled: true,
     isEnabled: true,
     createdAt: now,
     updatedAt: now
@@ -82,9 +94,12 @@ export const mockPenaltyRules: PenaltyRule[] = [
   {
     id: 'PEN002',
     name: '重型设备罚金',
+    description: '适用于大型或重型设备，罚金费率更高',
     penaltyRate: 2.0,
-    penaltyUnit: 'hour',
-    gracePeriod: 60,
+    penaltyUnit: 'hourly',
+    gracePeriod: 240,
+    gracePeriodHours: 4,
+    enabled: true,
     isEnabled: true,
     createdAt: now,
     updatedAt: now
@@ -92,9 +107,12 @@ export const mockPenaltyRules: PenaltyRule[] = [
   {
     id: 'PEN003',
     name: '按天罚金',
+    description: '按天计算罚金，适用于长期租赁设备',
     penaltyRate: 1.2,
-    penaltyUnit: 'day',
-    gracePeriod: 120,
+    penaltyUnit: 'daily',
+    gracePeriod: 1440,
+    gracePeriodHours: 24,
+    enabled: false,
     isEnabled: false,
     createdAt: now,
     updatedAt: now
@@ -102,10 +120,7 @@ export const mockPenaltyRules: PenaltyRule[] = [
 ];
 
 export const mockBillingConfig: BillingConfig = {
-  nearExpiryDays: 7,
-  defaultPenaltyRule: mockPenaltyRules[0],
-  minRentalHours: 1,
-  roundingRule: 'up'
+  ...DEFAULT_BILLING_CONFIG
 };
 
 export const getRateRuleByEquipmentId = (equipmentId: string): RateRule => {
@@ -117,5 +132,5 @@ export const getDefaultRateRule = (): RateRule => {
 };
 
 export const getEnabledPenaltyRules = (): PenaltyRule[] => {
-  return mockPenaltyRules.filter(p => p.isEnabled);
+  return mockPenaltyRules.filter(p => p.enabled || p.isEnabled);
 };
